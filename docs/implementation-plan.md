@@ -1,6 +1,6 @@
 # 技術路線與驗證
 
-> 2026-09-09 更新：本輪優先採原生 Timesheet 的應用層 PoC，禁止建立 Custom App 或變更服務。最新證據、限制、階段與驗收以 [修正計畫](work-log-poc-plan-2026-09-09.md) 為準。以下路線比較保留為初始提案，不代表目前授權實作獨立 App。
+> 2026-09-09 後續更新：先依 [ADR-001](adr-001-work-log-model.md) 決定 Timesheet／Daily Work Log 模型，再依 [新版驗收](next-poc-acceptance.md) 推進。先前直接補 Timesheet 欄位的順序不再是預設路線；禁止 Custom App、Core／服務變更的限制仍有效。以下內容保留為歷史規劃，實測見 [原 PoC 計畫](work-log-poc-plan-2026-09-09.md)。
 
 ## 已知與待確認
 
