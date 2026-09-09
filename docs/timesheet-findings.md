@@ -1,5 +1,7 @@
 # 原生 Timesheet 實測結果
 
+> 後續員工瀏覽器實測（2026-09-09）為 PARTIAL，見 [PoC 結論與修正計畫](work-log-poc-plan-2026-09-09.md)。以下為 2026-09-07 的歷史後端測試，不能與新一輪權限、站台與保存結果混為一談。
+
 日期：2026-09-07。ERPNext 16.34.1 / Frappe 16.33.0。
 
 在 erpnext.local 與 rpm-test.local 分別執行 [check_timesheet.py](../scripts/check_timesheet.py)，使用管理員身分測試伺服器文件流程，結束時回滾交易。兩站結果一致：

@@ -1,5 +1,7 @@
 # 技術路線與驗證
 
+> 2026-09-09 更新：本輪優先採原生 Timesheet 的應用層 PoC，禁止建立 Custom App 或變更服務。最新證據、限制、階段與驗收以 [修正計畫](work-log-poc-plan-2026-09-09.md) 為準。以下路線比較保留為初始提案，不代表目前授權實作獨立 App。
+
 ## 已知與待確認
 
 2026-09-07 初始 repo 無提交。後續已連線使用者提供的 Hyper-V VM，確認既有 ERPNext 16.34.1 / Frappe 16.33.0 安裝，啟用服務並新增 rpm-test.local 測試站。詳見 [VM 操作紀錄](vm-operations.md)。

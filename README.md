@@ -4,6 +4,8 @@
 
 ## 目前狀態
 
+2026-09-09 員工瀏覽器 PoC 結論為 **PARTIAL**：無 Project / Task 可保存本人紀錄，但結構化數量／單位、主管審核及資料隔離尚未完成。最新範圍與修正順序見 [PoC 結論與修正計畫](docs/work-log-poc-plan-2026-09-09.md)；本輪僅應用層 PoC，不建立 Custom App 或修改服務。
+
 已完成 Hyper-V VM 內的 ERPNext 服務啟用與獨立測試站建置，正在驗證每日工作紀錄的實作路線；尚未完成客製日報 App。
 
 | 用途 | 區網網址 | 站台 |
@@ -26,6 +28,8 @@
 
 ## 文件
 
+- [2026-09-09 員工 PoC 結論與修正計畫](docs/work-log-poc-plan-2026-09-09.md)
+
 - [每日工作紀錄 MVP 規格](docs/daily-work-log.md)
 - [技術路線與原生功能驗證](docs/implementation-plan.md)
 - [試辦驗收清單](docs/acceptance.md)
@@ -40,4 +44,4 @@
 
 ## 下一步
 
-在測試站比較「填起訖時間的原生 Timesheet」與「只填工時的 Daily Work Log」輸入流程，再實作結果／進度、主管審核及人員權限。不要將密碼、API token、站台備份或真實員工資料加入 Git。
+依最新計畫先核對修訂鏈與權限，再評估 Timesheet 明細數量／單位、員工畫面、Workflow 及直屬主管隔離。部署前確認目標站台；目前提交的是計畫，不是設定變更。不要將密碼、API token、站台備份或真實員工資料加入 Git。
