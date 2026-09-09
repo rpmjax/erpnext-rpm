@@ -4,6 +4,8 @@
 
 ## 目前狀態
 
+使用者已選擇 **B：先驗證 Daily Work Log 模型，再決定 C 正式化**。獨立 [Docker 模型原型](docs/docker-model-poc.md) 已於 http://127.0.0.1:8083 建立，管理員可分欄保存數量／單位／結果／工時，不需起訖時間；員工權限、審核與完整規則尚未驗收，未建立 Custom App。
+
 兩份後續研究報告已納入 [需求清單](docs/requirements-backlog.md)、[ADR-001 架構決策提案](docs/adr-001-work-log-model.md) 與 [下一輪驗收](docs/next-poc-acceptance.md)。下一步先決定 Timesheet／Daily Work Log 模型，不再預設直接往 Timesheet 加欄位；目前未授權或部署新 DocType／Custom App。
 
 2026-09-09 員工瀏覽器 PoC 結論為 **PARTIAL**：無 Project / Task 可保存本人紀錄，但結構化數量／單位、主管審核及資料隔離尚未完成。最新範圍與修正順序見 [PoC 結論與修正計畫](docs/work-log-poc-plan-2026-09-09.md)；本輪僅應用層 PoC，不建立 Custom App 或修改服務。
