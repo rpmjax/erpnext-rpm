@@ -2,6 +2,8 @@
 
 狀態：B 模型驗證第一步已建立，整體仍 PARTIAL。使用者已同意 B 先驗證、再決定 C；未建立 Custom App。
 
+2026-09-10 補充：已依使用者提供的 CSV 匯入 User 與組織主檔，詳見 [進度彙整](progress-2026-09-10.md)。現在本地站含授權的人員資料；下列「合成」描述指初始模型測試，不代表目前全站皆為合成資料。一般員工尚未取得工作紀錄權限。
+
 ## 環境
 
 - Docker Compose project：`erpnext-worklog-poc`。
@@ -9,7 +11,7 @@
 - 版本實讀：ERPNext 16.34.1、Frappe 16.33.0。
 - Compose 以官方 [frappe_docker pwd.yml](https://github.com/frappe/frappe_docker/blob/main/pwd.yml) 為基礎，ERPNext 固定 v16.34.1、port 改 loopback 8083。
 - 本機 compose 位於 `.local/worklog-poc/compose.yaml`，含官方 demo 設定，未提交 Git。這是本機示範環境，不能將 demo 設定直接公開上線。
-- 獨立 project network 與 named volumes；未讀取／複製 192.168.0.70 的業務資料，未改其服務，也未修改 Dolibarr 容器。
+- 獨立 project network 與 named volumes；初始模型未複製原站資料，後續僅匯入使用者提供的組織 CSV；未改原站服務，也未修改 Dolibarr 容器。
 - 官方 create-site 成功後，以原生 setup_complete 初始化 Taiwan、TWD、Asia/Taipei、English，建立合成公司。未只改 setup_complete 旗標跳過初始化。
 
 ## 模型與證據

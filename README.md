@@ -4,9 +4,11 @@
 
 ## 目前狀態
 
+2026-09-10：[最新進度彙整](docs/progress-2026-09-10.md)。Docker 已匯入 33 個 User、來源公司及 7 個部門、33 個 Employee（32 個 User 綁定、32 個主管關聯）。來源缺漏與重複員工號已記錄；一般員工工作紀錄權限及完整流程尚未完成。人員資料與帳密未提交 Git。
+
 使用者已選擇 **B：先驗證 Daily Work Log 模型，再決定 C 正式化**。獨立 [Docker 模型原型](docs/docker-model-poc.md) 已於 http://127.0.0.1:8083 建立，管理員可分欄保存數量／單位／結果／工時，不需起訖時間；員工權限、審核與完整規則尚未驗收，未建立 Custom App。
 
-兩份後續研究報告已納入 [需求清單](docs/requirements-backlog.md)、[ADR-001 架構決策提案](docs/adr-001-work-log-model.md) 與 [下一輪驗收](docs/next-poc-acceptance.md)。下一步先決定 Timesheet／Daily Work Log 模型，不再預設直接往 Timesheet 加欄位；目前未授權或部署新 DocType／Custom App。
+兩份後續研究報告已納入 [需求清單](docs/requirements-backlog.md)、[ADR-001 架構決策](docs/adr-001-work-log-model.md) 與 [下一輪驗收](docs/next-poc-acceptance.md)。已選 B 並建立 Custom DocType 原型，不再預設直接往 Timesheet 加欄位；Custom App 尚未授權或部署。
 
 2026-09-09 員工瀏覽器 PoC 結論為 **PARTIAL**：無 Project / Task 可保存本人紀錄，但結構化數量／單位、主管審核及資料隔離尚未完成。最新範圍與修正順序見 [PoC 結論與修正計畫](docs/work-log-poc-plan-2026-09-09.md)；本輪僅應用層 PoC，不建立 Custom App 或修改服務。
 
@@ -32,6 +34,8 @@
 
 ## 文件
 
+- [2026-09-10 模型與組織匯入進度](docs/progress-2026-09-10.md)
+
 - [工作紀錄與翻譯需求清單](docs/requirements-backlog.md)
 - [ADR-001：模型與翻譯維護路線](docs/adr-001-work-log-model.md)
 - [下一輪 PoC 驗收](docs/next-poc-acceptance.md)
@@ -52,4 +56,4 @@
 
 ## 下一步
 
-先完成需求清單 P0、核對修訂鏈與翻譯匯入結果，依 ADR-001 決定資料模型及允許實作範圍。翻譯先建立受 Git 管理的小批清單，再評估自動同步。部署前確認目標站台；目前提交的是計畫，不是設定變更。不要將密碼、API token、站台備份或真實員工資料加入 Git。
+依最新進度先確認組織來源例外，再驗證 B 模型的資料規則、本人／直屬主管權限與同單補正。翻譯先核對匯入結果、建立受 Git 管理的小批清單，再評估自動同步。Custom App 與原站部署另行決定。不要將密碼、API token、站台備份或真實員工資料加入 Git。
