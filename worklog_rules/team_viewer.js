@@ -1,17 +1,34 @@
 frappe.ui.form.on('RPM Team Work Log Viewer', {
     refresh(frm) {
         frm.disable_save();
-        frm.add_custom_button('查詢', () => load_team(frm));
-        if (!frm.doc.from_date) frm.doc.from_date = frappe.datetime.get_today();
-        if (!frm.doc.to_date) frm.doc.to_date = frappe.datetime.get_today();
-        frm.refresh_fields();
-        frm.fields_dict.results.$wrapper.html('<p>選擇日期後按「查詢」。此頁僅供查閱，不可修改員工紀錄。</p>');
+        // Query controls are transient HTML inputs, never saved document fields.
+        frm.set_df_property('from_date', 'hidden', 1);
+        frm.set_df_property('to_date', 'hidden', 1);
+        frm.doc.__unsaved = 0;
+        frm.page.set_indicator('唯讀查詢', 'blue');
+        const wrapper = frm.fields_dict.results.$wrapper;
+        wrapper.html(`<p>選擇日期後按下方「查詢」。此頁不需要保存。</p>
+            <div class="row">
+                <div class="col-sm-4"><label>開始日期 <input type="date" class="form-control team-from"></label></div>
+                <div class="col-sm-4"><label>結束日期 <input type="date" class="form-control team-to"></label></div>
+            </div>
+            <button type="button" class="btn btn-primary team-query" style="margin:12px 0">查詢</button>
+            <div class="team-results" aria-live="polite"></div>`);
+        wrapper.find('.team-from, .team-to').val(frappe.datetime.get_today());
+        const query = () => {
+            const from = wrapper.find('.team-from').val();
+            const to = wrapper.find('.team-to').val();
+            if (!from || !to) { frappe.msgprint('請填寫開始與結束日期'); return; }
+            load_team(frm, from, to);
+        };
+        wrapper.find('.team-query').on('click', query);
+        frm.page.set_primary_action('查詢', query);
     }
 });
-function load_team(frm) {
-    const target = frm.fields_dict.results.$wrapper;
+function load_team(frm, from_date, to_date) {
+    const target = frm.fields_dict.results.$wrapper.find('.team-results');
     target.empty().text('查詢中…');
-    frappe.call('rpm_team_worklogs', {from_date:frm.doc.from_date,to_date:frm.doc.to_date}).then(r => {
+    frappe.call('rpm_team_worklogs', {from_date, to_date}).then(r => {
         const data = r.message;
         const esc = value => frappe.utils.escape_html(String(value ?? ''));
         let html = `<p>有效直屬員工 ${data.direct_report_count} 位；本次顯示 ${data.logs.length} 張。${data.truncated ? '超過 300 張，請縮小日期範圍。' : ''}</p>`;
