@@ -2,4 +2,3 @@ FROM frappe/erpnext:v16.34.1
 COPY --chown=frappe:frappe apps/rpm_worklog /home/frappe/frappe-bench/apps/rpm_worklog
 USER frappe
 RUN /home/frappe/frappe-bench/env/bin/pip install --no-deps -e /home/frappe/frappe-bench/apps/rpm_worklog
-
