@@ -1,0 +1,17 @@
+services:
+  backend:
+    image: rpm-worklog-poc:0.1.0
+  queue-short:
+    image: rpm-worklog-poc:0.1.0
+  queue-long:
+    image: rpm-worklog-poc:0.1.0
+  scheduler:
+    image: rpm-worklog-poc:0.1.0
+  configurator:
+    image: rpm-worklog-poc:0.1.0
+  frontend:
+    image: rpm-worklog-poc:0.1.0
+  websocket:
+    image: rpm-worklog-poc:0.1.0
+  create-site:
+    image: rpm-worklog-poc:0.1.0

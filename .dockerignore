@@ -1,0 +1,6 @@
+*
+!apps/
+!apps/rpm_worklog/
+!apps/rpm_worklog/**
+!docker/
+!docker/Dockerfile.worklog

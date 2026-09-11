@@ -1,0 +1,27 @@
+from pathlib import Path
+import frappe
+
+def install():
+    assert frappe.local.site == 'frontend' and frappe.conf.get('rpm_worklog_model_poc')
+    dt=frappe.get_doc('DocType','RPM Daily Work Log')
+    for field in [dict(fieldname='review_state',label='Review Status',fieldtype='Select',options='Draft\nPending Review\nReturned\nApproved',default='Draft',read_only=1,in_list_view=1),dict(fieldname='return_reason',label='Return Reason',fieldtype='Small Text',read_only=1)]:
+        if not any(f.fieldname==field['fieldname'] for f in dt.fields):dt.append('fields',field)
+    dt.save()
+    frappe.db.sql("UPDATE `tabRPM Daily Work Log` SET review_state='Draft' WHERE review_state IS NULL OR review_state=''")
+    name='RPM Work Log Review Event'
+    if not frappe.db.exists('DocType',name):
+        fields=[dict(fieldname=n,label=label,fieldtype=kind,**opts) for n,label,kind,opts in [
+            ('work_log','Work Log','Link',{'options':'RPM Daily Work Log'}),
+            ('from_state','From State','Data',{}),('to_state','To State','Data',{}),('action','Action','Data',{}),
+            ('actor','Actor','Link',{'options':'User'}),('event_time','Event Time','Datetime',{}),('reason','Reason','Small Text',{})]]
+        frappe.get_doc(dict(doctype='DocType',name=name,module='Custom',custom=1,autoname='hash',fields=fields,permissions=[dict(role='System Manager',read=1)])).insert()
+    # App hook replaces the prototype event validation; no duplicate execution.
+    frappe.db.set_value('Server Script','RPM Work Log Validation','disabled',1)
+    root=Path(__file__).parent / 'public' / 'js'
+    for name,dt,source in [('RPM Employee Review','RPM Daily Work Log','employee_review.js'),('RPM Team Viewer','RPM Team Work Log Viewer','team_review.js')]:
+        d=frappe.get_doc('Client Script',name) if frappe.db.exists('Client Script',name) else frappe.new_doc('Client Script')
+        d.update(dict(name=name,dt=dt,view='Form',enabled=1,script=root.joinpath(source).read_text(encoding='utf-8-sig')));d.save()
+    d=frappe.get_doc('Server Script','RPM Team Work Logs')
+    d.script=d.script.replace("'employee','total_hours']", "'employee','total_hours','review_state','modified']")
+    d.save()
+    frappe.clear_cache()

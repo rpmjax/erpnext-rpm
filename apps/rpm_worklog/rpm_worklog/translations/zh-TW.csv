@@ -1,0 +1,18 @@
+Review Status,審核狀態
+Draft,草稿
+Pending Review,待審
+Returned,退回修改
+Approved,已核准
+Send for Review,送審
+Review History,審核歷程
+Return Reason,退回原因
+Approve,核准
+Return for Correction,退回修改
+No review history,尚無審核歷程
+Save changes before sending for review,請先保存修改再送審
+Send this work log for review?,確定送審此工作紀錄？
+Approve this work log?,確定核准此工作紀錄？
+This work log is locked,此紀錄已鎖定
+A return reason is required,退回時必須填寫原因
+Record changed; reload before continuing,紀錄已更新，請重新載入後再操作
+Use the review actions to change status,請使用審核按鈕變更狀態
