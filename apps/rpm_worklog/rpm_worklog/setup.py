@@ -24,6 +24,7 @@ def install():
     hint.options = '<div class="alert alert-info" role="note"><strong>填寫與物料搜尋</strong><br>可直接在下方表格填寫工作內容。需要挑選物料時：<strong>點該列最右側的鉛筆 ✎ → 展開明細 → 搜尋物料（Search Item）</strong>。<br>若看不到鉛筆，請將表格向右捲動；沒有工作列時，先按「添加行」。物料為選填，不搜尋也能記錄工作。</div>'
     dt.fields.remove(hint)
     dt.fields.insert(next(i for i, f in enumerate(dt.fields) if f.fieldname == 'lines'), hint)
+    for index, field in enumerate(dt.fields, 1): field.idx = index
     dt.save()
     frappe.db.sql("UPDATE `tabRPM Daily Work Log` SET review_state='Draft' WHERE review_state IS NULL OR review_state=''")
     name='RPM Work Log Review Event'
