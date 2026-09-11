@@ -16,3 +16,17 @@ This work log is locked,此紀錄已鎖定
 A return reason is required,退回時必須填寫原因
 Record changed; reload before continuing,紀錄已更新，請重新載入後再操作
 Use the review actions to change status,請使用審核按鈕變更狀態
+Search Item,搜尋物料
+Linked Item,關聯物料
+Item Name at Selection,選取時品名
+Remove Item Link,解除物料關聯
+Item Stock UOM,物料庫存單位
+Item UOM Conversion Factor,物料單位換算係數
+Item code or name,物料代碼或品名
+Searching...,搜尋中…
+Up to 20 results. Refine your search if needed.,最多顯示 20 筆，請輸入關鍵字縮小範圍。
+No matching items. You can still enter work content freely.,無符合物料，仍可自行填寫工作內容。
+Search failed. Please try again.,搜尋失敗，請重試。
+Item link removed; work content and unit retained,已解除關聯，工作內容與單位保留
+Selected unit is not configured for this item,所選單位未在此物料設定，請調整單位或解除物料關聯
+Select an enabled item or a specific item variant,請選擇啟用物料或具體規格物料

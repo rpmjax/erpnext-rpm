@@ -3,6 +3,18 @@ import frappe
 
 def install():
     assert frappe.local.site == 'frontend' and frappe.conf.get('rpm_worklog_model_poc')
+    line=frappe.get_doc('DocType','RPM Work Log Line')
+    fields=[
+        dict(fieldname='search_item',label='Search Item',fieldtype='Button'),
+        dict(fieldname='item_code',label='Linked Item',fieldtype='Link',options='Item',read_only=1,in_list_view=1),
+        dict(fieldname='item_name_snapshot',label='Item Name at Selection',fieldtype='Data',read_only=1),
+        dict(fieldname='clear_item',label='Remove Item Link',fieldtype='Button'),
+        dict(fieldname='item_stock_uom',label='Item Stock UOM',fieldtype='Link',options='UOM',read_only=1),
+        dict(fieldname='item_conversion_factor',label='Item UOM Conversion Factor',fieldtype='Float',read_only=1),
+    ]
+    for field in fields:
+        if not any(f.fieldname==field['fieldname'] for f in line.fields):line.append('fields',field)
+    line.save()
     dt=frappe.get_doc('DocType','RPM Daily Work Log')
     for field in [dict(fieldname='review_state',label='Review Status',fieldtype='Select',options='Draft\nPending Review\nReturned\nApproved',default='Draft',read_only=1,in_list_view=1),dict(fieldname='return_reason',label='Return Reason',fieldtype='Small Text',read_only=1)]:
         if not any(f.fieldname==field['fieldname'] for f in dt.fields):dt.append('fields',field)
@@ -18,10 +30,11 @@ def install():
     # App hook replaces the prototype event validation; no duplicate execution.
     frappe.db.set_value('Server Script','RPM Work Log Validation','disabled',1)
     root=Path(__file__).parent / 'public' / 'js'
-    for name,dt,source in [('RPM Employee Review','RPM Daily Work Log','employee_review.js'),('RPM Team Viewer','RPM Team Work Log Viewer','team_review.js')]:
+    for name,dt,source in [('RPM Item Picker','RPM Daily Work Log','item_picker.js'),('RPM Employee Review','RPM Daily Work Log','employee_review.js'),('RPM Team Viewer','RPM Team Work Log Viewer','team_review.js')]:
         d=frappe.get_doc('Client Script',name) if frappe.db.exists('Client Script',name) else frappe.new_doc('Client Script')
         d.update(dict(name=name,dt=dt,view='Form',enabled=1,script=root.joinpath(source).read_text(encoding='utf-8-sig')));d.save()
     d=frappe.get_doc('Server Script','RPM Team Work Logs')
     d.script=d.script.replace("'employee','total_hours']", "'employee','total_hours','review_state','modified']")
+    d.script=d.script.replace("'hours','note']", "'hours','note','item_code','item_name_snapshot']")
     d.save()
     frappe.clear_cache()

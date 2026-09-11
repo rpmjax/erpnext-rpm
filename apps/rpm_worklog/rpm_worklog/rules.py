@@ -1,4 +1,5 @@
 import frappe
+from rpm_worklog.items import validate_items
 
 def validate_data(doc):
     # Runs as a native Before Validate Server Script.
@@ -13,6 +14,7 @@ def validate_data(doc):
         frappe.throw('只能填寫本人的工作紀錄')
     doc.department = emp.department
     doc.employee_name = emp.employee_name
+    validate_items(doc)
     total = 0
     for row in doc.lines:
         if not row.work_item or not row.work_item.strip():
