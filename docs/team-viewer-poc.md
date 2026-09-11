@@ -44,3 +44,7 @@
 ## 返回首頁導覽
 
 主管查閱頁日期控制項上方加入「← 返回首頁」原生連結，目的地 /desk，同分頁開啟；查詢結果更新不會移除導覽。JavaScript 語法與站台回傳 Client Script 已確認，未代操作瀏覽器。人工驗收：重新載入查閱頁 → 點返回首頁 → 應回到圖示首頁 → 點直屬員工工作紀錄可再次进入。
+
+## 主管圖示外觀
+
+沿用 Frappe 內建 users.svg 圖案，獨立副本採黃色 #FACC15 背景及深色 #713F12 人像。Desktop Icon 原生 bg_color 僅 gray/blue，因此以 icon_image／logo_url 指向站台公開 SVG，不擴充核心選項。原始素材未修改。腳本 scripts/configure_team_icon_poc.py，素材 assets/team-worklogs-yellow.svg；執行前複製素材至容器 /tmp/team-worklogs-yellow.svg。部署後實際 SVG URL 回應 200 且色碼符合；待使用者 Ctrl+Shift+R 人工確認。
