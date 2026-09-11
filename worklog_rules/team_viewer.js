@@ -7,7 +7,7 @@ frappe.ui.form.on('RPM Team Work Log Viewer', {
         frm.doc.__unsaved = 0;
         frm.page.set_indicator('唯讀查詢', 'blue');
         const wrapper = frm.fields_dict.results.$wrapper;
-        wrapper.html(`<p>選擇日期後按下方「查詢」。此頁不需要保存。</p>
+        wrapper.html(`<nav aria-label="頁面導覽" style="margin-bottom:16px"><a class="btn btn-default" href="/desk">← 返回首頁</a></nav><p>選擇日期後按下方「查詢」。此頁不需要保存。</p>
             <div class="row">
                 <div class="col-sm-4"><label>開始日期 <input type="date" class="form-control team-from"></label></div>
                 <div class="col-sm-4"><label>結束日期 <input type="date" class="form-control team-to"></label></div>
