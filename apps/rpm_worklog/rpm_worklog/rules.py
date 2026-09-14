@@ -27,8 +27,6 @@ def validate_data(doc):
         qty = frappe.utils.flt(row.quantity)
         if not (qty >= 0 and qty < float('inf')):
             frappe.throw('數量必須為有效的非負數')
-        if row.record_quantity or qty != 0:
-            row.record_quantity = 1
         total = total + hours
     if total > 24:
         frappe.throw('單張總工時不可超過 24 小時')

@@ -20,6 +20,9 @@ def install():
             f.in_list_view = 0
             f.reqd = 0
         if f.fieldname == 'record_quantity':
+            f.hidden = 1
+            f.in_list_view = 0
+            f.read_only = 1
             f.description = '勾選表示記錄數量，數量可為 0；目前暫不使用單位。'
     line.save()
     dt=frappe.get_doc('DocType','RPM Daily Work Log')
