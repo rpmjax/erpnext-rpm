@@ -74,4 +74,5 @@ def install():
     d.script=d.script.replace("'employee','total_hours']", "'employee','total_hours','review_state','modified']")
     d.script=d.script.replace("'hours','note']", "'hours','note','item_code','item_name_snapshot']")
     d.save()
-    frappe.clear_cache()
+    # Invalidate after schema/script changes are committed, avoiding old-data cache refill.
+    frappe.db.after_commit.add(frappe.clear_cache)

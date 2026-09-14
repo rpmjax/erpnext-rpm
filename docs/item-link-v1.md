@@ -63,3 +63,7 @@ Client Script set_query 指向受角色／有效員工保護的 rpm_worklog.item
 員工 HTTP 測試：原生 search_link 輸入 sho 回傳 RPM-POC-SHOCK 與品名；原生 validate_link_and_fetch 成功；Item REST GET 仍 403。scripts/test_inline_item_poc.py 驗證無 Work Item 可保存／送審、有品名快照、欄位排序與可編輯屬性，交易 rollback。審核回歸 PASS。
 
 手動驗收：保存輸入後 Ctrl+Shift+R，在表格「關聯物料」欄輸入 sho → 點候選 RPM-POC-SHOCK → 填数量、工時、結果 → 保存重開。應不再看到 Work Item，且物料代碼仍保留。尚未代使用者進行瀏覽器驗收。
+
+## 表單舊版回報複檢
+
+使用者截圖仍顯示舊提示、Work Item 必填與唯讀 Item。重新套用 setup 並以兩位員工的實際 getdoctype HTTP 回應驗證：item_code hidden=0/read_only=0；work_item hidden=1/read_only=1；父表包含 link_query 新腳本。增加 after_commit 清除快取，避免交易提交前清快取而被其他請求以舊資料重新填入。瀏覽器仍可能保留已載入的 locals.DocType，需完整重新載入或另開新頁；尚未宣稱使用者畫面已驗收。
