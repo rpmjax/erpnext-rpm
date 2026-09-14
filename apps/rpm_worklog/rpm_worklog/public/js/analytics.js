@@ -27,7 +27,7 @@ frappe.ui.form.on('RPM Work Log Analytics', {
                 const metric = `${__(d.operation)} (${unit})`;
                 output.html(`<h3>${esc(__(d.title))}</h3><p>${esc(__(d.scope))} · ${esc(d.from_date)} ~ ${esc(d.to_date)} · ${esc(__(d.state))}<br>${esc(countUnit)}: ${d.sample_count} · ${esc(metric)}</p><div class="analytics-chart"></div><div class="table-responsive"><table class="table table-bordered"><thead><tr><th>${esc(d.group_label)}</th><th>${esc(metric)}</th></tr></thead><tbody></tbody></table></div>`);
                 const body = output.find('tbody');
-                d.rows.forEach(r => body.append(`<tr><td>${esc(__(r.label))}</td><td>${esc(frappe.format(r.value, {fieldtype:'Float',precision:3}))}</td></tr>`));
+                d.rows.forEach(r => body.append(`<tr><td>${esc(__(r.label))}</td><td>${esc(Number(r.value).toFixed(d.operation === 'Count' ? 0 : 3))}</td></tr>`));
                 if (!d.rows.length) { output.append($('<p>').text(__('No data in this scope'))); return; }
                 if (d.rows.length > 60) { output.prepend($('<p>').text(__('More than 60 groups: showing the complete table only. Narrow dates for a chart.'))); return; }
                 if (!frappe.Chart) { output.prepend(document.createTextNode(__('Chart unavailable; complete table shown.'))); return; }
