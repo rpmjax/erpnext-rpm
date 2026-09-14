@@ -1,5 +1,12 @@
 frappe.listview_settings['RPM Daily Work Log'] = {
     add_fields: ['modified', 'review_state'],
+    has_indicator_for_draft: true,
+    get_indicator(doc) {
+        const state = doc.review_state || 'Draft';
+        const colors = {'Draft':'gray','Pending Review':'blue','Returned':'orange','Approved':'green'};
+        const labels = {'Draft':'草稿','Pending Review':'待審','Returned':'退回修改','Approved':'已核准'};
+        return [labels[state] || state, colors[state] || 'gray', `review_state,=,${state}`];
+    },
     onload(listview) {
         listview.page.add_action_item(__('Send for Review'), () => {
             if (listview.rpm_submitting) return;
