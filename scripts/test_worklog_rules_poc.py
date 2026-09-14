@@ -24,8 +24,6 @@ try:
             ('no rows', lambda d:d.set('lines',[])),
             ('zero hours',lambda d:setattr(d.lines[0],'hours',0)),
             ('negative quantity',lambda d:setattr(d.lines[0],'quantity',-1)),
-            ('missing unit',lambda d:setattr(d.lines[0],'quantity',5)),
-            ('zero quantity missing unit',lambda d:setattr(d.lines[0],'record_quantity',1)),
             ('too many hours',lambda d:setattr(d.lines[0],'hours',24)),
             ('bad result',lambda d:setattr(d.lines[0],'result','BAD')),
         ]:

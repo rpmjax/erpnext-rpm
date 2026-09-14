@@ -14,6 +14,13 @@ def install():
     ]
     for field in fields:
         if not any(f.fieldname==field['fieldname'] for f in line.fields):line.append('fields',field)
+    for f in line.fields:
+        if f.fieldname in ('uom','item_stock_uom','item_conversion_factor'):
+            f.hidden = 1
+            f.in_list_view = 0
+            f.reqd = 0
+        if f.fieldname == 'record_quantity':
+            f.description = '勾選表示記錄數量，數量可為 0；目前暫不使用單位。'
     line.save()
     dt=frappe.get_doc('DocType','RPM Daily Work Log')
     for field in [dict(fieldname='review_state',label='Review Status',fieldtype='Select',options='Draft\nPending Review\nReturned\nApproved',default='Draft',read_only=1,in_list_view=1),dict(fieldname='return_reason',label='Return Reason',fieldtype='Small Text',read_only=1)]:

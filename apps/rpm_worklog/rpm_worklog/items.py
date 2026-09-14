@@ -28,7 +28,7 @@ def search_items(text=''):
     pattern = '%' + text.replace('\\','\\\\').replace('%','\\%').replace('_','\\_') + '%'
     return frappe.get_all('Item', filters={'disabled':0,'has_variants':0},
         or_filters=[['name','like',pattern],['item_name','like',pattern]],
-        fields=['name','item_name','stock_uom'],order_by='name',limit_page_length=20)
+        fields=['name','item_name'],order_by='name',limit_page_length=20)
 
 
 def validate_items(doc):
@@ -45,8 +45,4 @@ def validate_items(doc):
         previous = old.get(row.name)
         row.item_name_snapshot = previous.item_name_snapshot if previous and previous.item_code == row.item_code and previous.item_name_snapshot else item.item_name
         if not (row.work_item or '').strip(): row.work_item = item.item_name
-        if not row.uom: row.uom = item.stock_uom
-        if row.uom not in units:
-            frappe.throw(_('Selected unit is not configured for this item'))
-        row.item_stock_uom = item.stock_uom
-        row.item_conversion_factor = units[row.uom]
+        # Units temporarily disabled: do not fill, convert, or overwrite stored unit values.

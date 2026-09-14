@@ -18,11 +18,10 @@ frappe.ui.form.on('RPM Work Log Line', {
                 if (!r.message.length) $('<p>').text(__('No matching items. You can still enter work content freely.')).appendTo(area);
                 for (const item of r.message) {
                     $('<button type="button" class="btn btn-default" style="display:block;margin:6px 0;text-align:left;white-space:normal">')
-                    .text(`${item.name} | ${item.item_name} | ${item.stock_uom}`).appendTo(area).on('click', async () => {
+                    .text(`${item.name} | ${item.item_name}`).appendTo(area).on('click', async () => {
                         await frappe.model.set_value(cdt,cdn,'item_code',item.name);
                         await frappe.model.set_value(cdt,cdn,'item_name_snapshot',item.item_name);
                         if (!(row.work_item || '').trim()) await frappe.model.set_value(cdt,cdn,'work_item',item.item_name);
-                        if (!row.uom) await frappe.model.set_value(cdt,cdn,'uom',item.stock_uom);
                         dialog.hide(); frm.refresh_field('lines');
                     });
                 }

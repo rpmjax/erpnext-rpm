@@ -13,12 +13,12 @@ try:
     user=frappe.get_all('Has Role',filters={'parenttype':'User','role':'RPM Work Log Pilot'},pluck='parent')[0]
     frappe.set_user(user)
     matches=search_items('RPM-ROLLBACK');assert len(matches)==1
-    assert set(matches[0])=={'name','item_name','stock_uom'}
+    assert set(matches[0])=={'name','item_name'}
     employee=frappe.db.get_value('Employee',{'user_id':user},'name')
     doc=frappe.get_doc(dict(doctype='RPM Daily Work Log',title='Item rollback',employee=employee,work_date='2099-02-01',lines=[dict(work_item='My own description',hours=1,result='Completed',item_code=code,item_name_snapshot='forged')])).insert()
-    row=doc.lines[0];assert row.work_item=='My own description' and row.uom=='PoC Piece' and row.item_name_snapshot=='Material selection test'
+    row=doc.lines[0];assert row.work_item=='My own description' and not row.uom and row.item_name_snapshot=='Material selection test'
     row.item_name_snapshot='spoof';doc.save();assert row.item_name_snapshot=='Material selection test'
-    row.uom=frappe.db.get_value('UOM',{'name':['!=','PoC Piece']},'name');denied(lambda:doc.save());doc.reload()
+    row.uom=frappe.db.get_value('UOM',{'name':['!=','PoC Piece']},'name');doc.save();doc.reload()
     frappe.set_user('Administrator');frappe.db.set_value('Item',code,'item_name','Renamed master')
     frappe.set_user(user);doc.save();assert doc.lines[0].item_name_snapshot=='Material selection test'
     doc.lines[0].item_code='';doc.save();assert not doc.lines[0].item_name_snapshot and doc.lines[0].work_item=='My own description'
@@ -28,6 +28,6 @@ try:
     frappe.set_user('Administrator');frappe.db.set_value('Item',code,'disabled',1)
     frappe.set_user(user);assert not search_items('RPM-ROLLBACK')
     frappe.set_user('Guest');denied(lambda:search_items(''))
-    print('ITEM_TEST_PASS optional link, safe search, preserve text, snapshot, units, unlink, lock, disabled, Guest')
+    print('ITEM_TEST_PASS optional link, safe search, preserve text, snapshot, units disabled, unlink, lock, disabled, Guest')
 finally:
     frappe.db.rollback();frappe.set_user('Administrator')
