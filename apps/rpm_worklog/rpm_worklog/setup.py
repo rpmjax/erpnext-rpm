@@ -82,3 +82,6 @@ def install():
     d.save()
     # Invalidate after schema/script changes are committed, avoiding old-data cache refill.
     frappe.db.after_commit.add(frappe.clear_cache)
+
+    from rpm_worklog.report_setup import install as install_reports
+    install_reports()

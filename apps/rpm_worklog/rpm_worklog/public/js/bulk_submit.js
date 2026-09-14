@@ -1,6 +1,7 @@
 frappe.listview_settings['RPM Daily Work Log'] = {
     add_fields: ['modified', 'review_state'],
     onload(listview) {
+        listview.page.add_inner_button(__('Work Log Analytics'), () => frappe.set_route('Form', 'RPM Work Log Analytics', 'RPM Work Log Analytics'));
         listview.page.add_action_item(__('Send for Review'), () => {
             if (listview.rpm_submitting) return;
             const selected = listview.get_checked_items();

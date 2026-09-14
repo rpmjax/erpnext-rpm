@@ -1,5 +1,6 @@
 frappe.ui.form.on('RPM Team Work Log Viewer', {
     refresh(frm) {
+        frm.add_custom_button(__('Work Log Analytics'), () => frappe.set_route('Form', 'RPM Work Log Analytics', 'RPM Work Log Analytics'));
         frm.disable_save();
         // Query controls are transient HTML inputs, never saved document fields.
         frm.set_df_property('from_date', 'hidden', 1);

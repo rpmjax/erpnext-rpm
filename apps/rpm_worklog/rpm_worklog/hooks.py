@@ -17,3 +17,5 @@ doc_events = {
         "on_trash": "rpm_worklog.review.protect_event",
     },
 }
+
+doc_events['RPM Work Log Report'] = {'validate': 'rpm_worklog.reports.validate_config'}

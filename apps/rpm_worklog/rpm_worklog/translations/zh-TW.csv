@@ -43,3 +43,26 @@ Bulk Submission Results,批次送審結果
 success,成功
 skipped,略過
 failed,失敗
+Work Log Analytics,工作紀錄報表
+Run Report,查詢報表
+Report Settings,報表設定
+Back to Home,返回首頁
+Reports use the selected dates and review status. Quantity is not aggregated.,依所選日期與審核狀態統計；不彙總數量。
+Select a report and date range,請選擇報表與日期範圍
+Daily Hours,每日工時
+Hours by Employee,各員工工時
+Review Status Distribution,審核狀態分布
+Self,本人
+Team,直屬員工
+All,全部狀態
+Sum,合計
+Average,平均
+Count,筆數
+Work Logs,工作紀錄張數
+No data in this scope,此範圍沒有資料
+More than 60 groups: showing the complete table only. Narrow dates for a chart.,超過 60 組，僅顯示完整表格；請縮小日期範圍以繪圖。
+Report failed. Check the error message and settings.,查詢失敗，請查看錯誤訊息與報表設定。
+Grouping field is unavailable or incompatible,分組欄位已停用或不相容，請調整報表設定
+Measure is unavailable or incompatible with report grain,統計欄位已停用或與資料層級不相容
+Select at most 366 days,日期範圍最多 366 天
+"More than 500 groups; narrow the date range",超過 500 組，請縮小日期範圍
