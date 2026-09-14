@@ -53,3 +53,13 @@ scripts/test_items_poc.py 在 rollback 交易內驗證：選填連結、文字�
 ## 基本資料區排序
 
 依使用者指定，員工姓名、Total Hours、審核狀態移至 Work Entries 前方，與標題／日期／員工／部門同區；退回原因也置於審核狀態後。工作列選擇與物料按鈕保持緊鄰 Work Entries。只改欄位排序，資料與計算不變。已檢查儲存後 metadata 順序，待使用者重載確認。
+
+## 2026-09-14：Work Item 停用與物料即時候選
+
+依最新要求，work_item 欄位保留資料但隱藏／唯讀／取消必填，伺服器停止要求及自動帶入文字。主管表格亦不顯示該欄。item_code 可直接編輯，移至原 work_item 之前，使用原生 Link 的 AJAX 搜尋與點選候選。仍為選填，沒有新增物料必填規則。
+
+Client Script set_query 指向受角色／有效員工保護的 rpm_worklog.items.link_query，僅回傳代碼與品名，最多 20 筆。不建立 Item、不異動庫存，原單位及勾選繼續停用。搜尋按鈕及解除關聯保留作替代入口。品名快照由保存時重取／保留。
+
+員工 HTTP 測試：原生 search_link 輸入 sho 回傳 RPM-POC-SHOCK 與品名；原生 validate_link_and_fetch 成功；Item REST GET 仍 403。scripts/test_inline_item_poc.py 驗證無 Work Item 可保存／送審、有品名快照、欄位排序與可編輯屬性，交易 rollback。審核回歸 PASS。
+
+手動驗收：保存輸入後 Ctrl+Shift+R，在表格「關聯物料」欄輸入 sho → 點候選 RPM-POC-SHOCK → 填数量、工時、結果 → 保存重開。應不再看到 Work Item，且物料代碼仍保留。尚未代使用者進行瀏覽器驗收。

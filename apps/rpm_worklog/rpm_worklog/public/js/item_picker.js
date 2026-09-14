@@ -1,10 +1,11 @@
 frappe.ui.form.on('RPM Daily Work Log', {
+    setup(frm) { frm.set_query('item_code', 'lines', () => ({query:'rpm_worklog.items.link_query'})); },
     refresh(frm) { rpm_material_toolbar(frm); }
 });
 function rpm_material_toolbar(frm) {
     const area = frm.fields_dict.work_entry_help.$wrapper;
     area.empty();
-    $('<p>').text('可直接填寫工作內容；需要物料時，在這裡選擇工作列後操作，不必展開鉛筆明細。').appendTo(area);
+    $('<p>').text('在下方「關聯物料」輸入代碼或品名，例如 sho，再點選候選結果。也可使用下列搜尋按鈕。').appendTo(area);
     const rows = frm.doc.lines || [];
     if (!rows.length) { $('<p>').text('請先按「添加行」建立工作列。').appendTo(area); return; }
     const locked = ['Pending Review','Approved'].includes(frm.doc.review_state);
@@ -24,7 +25,7 @@ function rpm_material_toolbar(frm) {
 frappe.ui.form.on('RPM Work Log Line', {
     lines_add(frm) { rpm_material_toolbar(frm); },
     lines_remove(frm) { rpm_material_toolbar(frm); },
-    item_code(frm) { rpm_material_toolbar(frm); },
+    item_code(frm, cdt, cdn) { frappe.model.set_value(cdt, cdn, 'item_name_snapshot', ''); rpm_material_toolbar(frm); },
     search_item(frm, cdt, cdn) {
         if (['Pending Review','Approved'].includes(frm.doc.review_state)) return;
         const row = locals[cdt][cdn];
@@ -47,7 +48,6 @@ frappe.ui.form.on('RPM Work Log Line', {
                     .text(`${item.name} | ${item.item_name}`).appendTo(area).on('click', async () => {
                         await frappe.model.set_value(cdt,cdn,'item_code',item.name);
                         await frappe.model.set_value(cdt,cdn,'item_name_snapshot',item.item_name);
-                        if (!(row.work_item || '').trim()) await frappe.model.set_value(cdt,cdn,'work_item',item.item_name);
                         dialog.hide(); frm.refresh_field('lines');
                     });
                 }

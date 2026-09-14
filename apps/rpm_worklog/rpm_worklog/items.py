@@ -44,5 +44,17 @@ def validate_items(doc):
         item, units = item_data(row.item_code)
         previous = old.get(row.name)
         row.item_name_snapshot = previous.item_name_snapshot if previous and previous.item_code == row.item_code and previous.item_name_snapshot else item.item_name
-        if not (row.work_item or '').strip(): row.work_item = item.item_name
         # Units temporarily disabled: do not fill, convert, or overwrite stored unit values.
+
+
+@frappe.whitelist()
+def link_query(doctype, txt, searchfield=None, start=0, page_len=20, filters=None, **kwargs):
+    if doctype != 'Item':
+        frappe.throw(_('Not permitted'), frappe.PermissionError)
+    rows = search_items(txt)
+    start = max(0, int(start or 0))
+    length = min(20, max(1, int(page_len or 20)))
+    rows = rows[start:start+length]
+    if kwargs.get('as_dict'):
+        return rows
+    return [[r.name, r.item_name] for r in rows]

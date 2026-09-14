@@ -17,8 +17,6 @@ def validate_data(doc):
     validate_items(doc)
     total = 0
     for row in doc.lines:
-        if not row.work_item or not row.work_item.strip():
-            frappe.throw('工作內容不可空白')
         if row.result not in ['In Progress', 'Completed', 'Blocked']:
             frappe.throw('請選擇有效的工作結果')
         hours = frappe.utils.flt(row.hours)
