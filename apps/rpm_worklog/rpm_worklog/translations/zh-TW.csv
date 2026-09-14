@@ -30,3 +30,16 @@ Search failed. Please try again.,搜尋失敗，請重試。
 Item link removed; work content and unit retained,已解除關聯，工作內容與單位保留
 Selected unit is not configured for this item,所選單位未在此物料設定，請調整單位或解除物料關聯
 Select an enabled item or a specific item variant,請選擇啟用物料或具體規格物料
+Select between 1 and 50 work logs,請勾選 1 至 50 筆工作紀錄
+Invalid selection; refresh the list,選取資料不完整，請重新整理列表
+Duplicate selection,重複選取，已略過
+Not permitted or record unavailable,無權操作或紀錄不存在
+Already pending or approved,已待審或核准，略過送審
+Sent for review,已送審
+Send {0} selected work logs for review?,確定將選取的 {0} 筆工作紀錄送審？
+Sending for review...,送審中…
+"Success: {0}; skipped: {1}; failed: {2}","成功：{0}；略過：{1}；失敗：{2}"
+Bulk Submission Results,批次送審結果
+success,成功
+skipped,略過
+failed,失敗

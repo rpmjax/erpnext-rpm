@@ -96,3 +96,40 @@ def history(name):
     if not doc.has_permission('read') and not is_manager(doc):
         frappe.throw(_('Not permitted'), frappe.PermissionError)
     return frappe.get_all('RPM Work Log Review Event',filters={'work_log':name},fields=['from_state','to_state','actor','event_time','reason'],order_by='creation asc',limit_page_length=0)
+
+@frappe.whitelist(methods=['POST'])
+def bulk_submit(records):
+    records = frappe.parse_json(records)
+    if not isinstance(records, list) or not 1 <= len(records) <= 50:
+        frappe.throw(_('Select between 1 and 50 work logs'))
+    for row in records:
+        if not isinstance(row, dict) or not isinstance(row.get('name'), str) or not row.get('modified'):
+            frappe.throw(_('Invalid selection; refresh the list'))
+    results = []
+    seen = set()
+    for index, row in enumerate(sorted(records, key=lambda r: r['name'])):
+        name = row['name']
+        if name in seen:
+            results.append(dict(name=name,status='skipped',message=_('Duplicate selection')))
+            continue
+        seen.add(name)
+        point = 'rpm_bulk_' + str(index)
+        frappe.db.savepoint(point)
+        try:
+            if not frappe.db.exists(DT, name):
+                frappe.throw(_('Not permitted or record unavailable'), frappe.PermissionError)
+            old = lock(name)
+            doc = frappe.get_doc(DT, name)
+            if not doc.has_permission('write') or doc.employee != employee_for(frappe.session.user):
+                frappe.throw(_('Not permitted or record unavailable'), frappe.PermissionError)
+            if (old.review_state or 'Draft') not in ('Draft','Returned'):
+                results.append(dict(name=name,status='skipped',message=_('Already pending or approved')))
+                continue
+            transition(name,'submit',row['modified'])
+            results.append(dict(name=name,status='success',message=_('Sent for review')))
+        except (frappe.PermissionError, frappe.ValidationError, frappe.TimestampMismatchError) as exc:
+            frappe.db.rollback(save_point=point)
+            message = _('Not permitted or record unavailable') if isinstance(exc,frappe.PermissionError) else str(exc)
+            results.append(dict(name=name,status='failed',message=message))
+    # Successful items commit with the request; each expected failure rolls back to its savepoint.
+    return {'results':results, 'counts':{status:sum(r['status']==status for r in results) for status in ('success','skipped','failed')}}

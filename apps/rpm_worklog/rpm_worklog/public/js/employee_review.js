@@ -4,8 +4,9 @@ frappe.ui.form.on('RPM Daily Work Log', {
         const locked = ['Pending Review', 'Approved'].includes(state);
         ['title','work_date','lines'].forEach(field => frm.set_df_property(field, 'read_only', locked ? 1 : 0));
         if (locked) frm.disable_save(); else frm.enable_save();
+        frm.page.clear_secondary_action();
         if (frm.is_new()) return;
-        if (['Draft','Returned'].includes(state)) frm.add_custom_button(__('Send for Review'), () => {
+        if (['Draft','Returned'].includes(state)) frm.page.set_secondary_action(__('Send for Review'), () => {
             if (frm.is_dirty()) { frappe.msgprint(__('Save changes before sending for review')); return; }
             frappe.confirm(__('Send this work log for review?'), () => frappe.call({
                 method:'rpm_worklog.review.transition', type:'POST',

@@ -35,9 +35,11 @@ def install():
             f.in_list_view = 1
             f.columns = 3
             f.description = '輸入物料代碼或品名，例如 sho，再點選候選物料。'
-    item_field = next(f for f in line.fields if f.fieldname == 'item_code')
-    line.fields.remove(item_field)
-    line.fields.insert(next(i for i, f in enumerate(line.fields) if f.fieldname == 'work_item'), item_field)
+    material_names = ['item_code', 'item_name_snapshot', 'search_item', 'clear_item']
+    material_fields = [f for name in material_names for f in line.fields if f.fieldname == name]
+    remaining = [f for f in line.fields if f.fieldname not in material_names]
+    position = next(i for i, f in enumerate(remaining) if f.fieldname == 'work_item')
+    line.fields = remaining[:position] + material_fields + remaining[position:]
     for index, f in enumerate(line.fields, 1): f.idx = index
     line.save()
     dt=frappe.get_doc('DocType','RPM Daily Work Log')
@@ -70,6 +72,10 @@ def install():
     for name,dt,source in [('RPM Item Picker','RPM Daily Work Log','item_picker.js'),('RPM Employee Review','RPM Daily Work Log','employee_review.js'),('RPM Team Viewer','RPM Team Work Log Viewer','team_review.js')]:
         d=frappe.get_doc('Client Script',name) if frappe.db.exists('Client Script',name) else frappe.new_doc('Client Script')
         d.update(dict(name=name,dt=dt,view='Form',enabled=1,script=root.joinpath(source).read_text(encoding='utf-8-sig')));d.save()
+    name='RPM Bulk Submit'
+    d=frappe.get_doc('Client Script',name) if frappe.db.exists('Client Script',name) else frappe.new_doc('Client Script')
+    d.update(dict(name=name,dt='RPM Daily Work Log',view='List',enabled=1,script=root.joinpath('bulk_submit.js').read_text(encoding='utf-8-sig')))
+    d.save()
     d=frappe.get_doc('Server Script','RPM Team Work Logs')
     d.script=d.script.replace("'employee','total_hours']", "'employee','total_hours','review_state','modified']")
     d.script=d.script.replace("'hours','note']", "'hours','note','item_code','item_name_snapshot']")
