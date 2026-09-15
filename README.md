@@ -4,6 +4,8 @@
 
 ## 目前狀態
 
+2026-09-15：[Ubuntu／Hyper-V 正式上線操作手冊](docs/ubuntu-hyperv-go-live-runbook.md)已準備，涵蓋安裝前置工作、資料與備份、驗收、搬機、切換與回滾；尚未執行 VM 部署。
+
 2026-09-14 最新：[進度、真實工號待辦與 VM SSH 部署準備](docs/progress-and-vm-deployment-2026-09-14.md)。[可設定報表／圖表第一版](docs/worklog-analytics-poc.md)已部署本機 Docker，數值 HTML 顯示已修正；真實工號搜尋尚未實作，VM 安裝移植尚未完成。下方為歷史進度。
 
 2026-09-14：[路線圖與操作改善批次](docs/roadmap-2026-09-14.md)：物料按鈕前移、頁首送審及列表批次送審已部署，自動測試通過，待人工驗收。可設定圖表列為下一階段，尚未實作。
