@@ -59,7 +59,7 @@ services:
     command: [node, /home/frappe/frappe-bench/apps/frappe/socketio.js]
   queue-short:
     <<: *app
-    command: [bench, worker, --queue, short,default]
+    command: [bench, worker, --queue, "short,default"]
   queue-long:
     <<: *app
     command: [bench, worker, --queue, long]

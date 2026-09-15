@@ -26,6 +26,39 @@ set -a
 source "$config_file"
 set +a
 compose() { docker compose --env-file "$config_file" -p "$RPM_PROJECT" -f "$repo_dir/deploy/compose.yaml" "$@"; }
+
+service_snapshot() {
+    local service=$1 cid state
+    cid=$(compose ps -a -q "$service")
+    [[ -n "$cid" && "$cid" != *$'\n'* ]] || return 1
+    state=$(docker inspect --format '{{.State.Running}} {{if .State.Health}}{{.State.Health.Status}}{{else}}none{{end}}' "$cid")
+    [[ "$state" == 'true healthy' || "$state" == 'true none' ]] || return 1
+    docker inspect --format '{{.Id}} {{.RestartCount}} {{.State.StartedAt}}' "$cid"
+}
+verify_services() {
+    local service attempt ready current tick
+    local services=(db redis-cache redis-queue backend websocket queue-short queue-long scheduler frontend)
+    local -A baseline
+    for attempt in {1..12}; do
+        ready=1
+        for service in "${services[@]}"; do
+            if ! baseline[$service]=$(service_snapshot "$service"); then ready=0; fi
+        done
+        if [[ "$ready" == 1 ]]; then break; fi
+        echo 'Waiting for all services to run and health checks to pass...'
+        sleep 5
+    done
+    if [[ "$ready" != 1 ]]; then compose ps -a; echo 'Service readiness failed; run logs.'; return 1; fi
+    echo 'Checking all 9 services for 60 seconds without restarts...'
+    for tick in {1..12}; do
+        sleep 5
+        for service in "${services[@]}"; do
+            current=$(service_snapshot "$service") || { echo "Unstable service: $service"; return 1; }
+            [[ "$current" == "${baseline[$service]}" ]] || { echo "Service restarted: $service"; return 1; }
+        done
+    done
+    echo 'SERVICES_STABLE: all 9 running; health checks pass; no restarts during observation.'
+}
 case "$command" in
     build)
         if [[ -n "$(git status --porcelain)" && "${RPM_ALLOW_DIRTY:-0}" != 1 ]]; then echo 'Commit tracked changes before building a release'; exit 1; fi
@@ -37,9 +70,10 @@ case "$command" in
     init)
         compose --profile setup run --rm init
         compose up -d db redis-cache redis-queue backend websocket queue-short queue-long scheduler frontend
+        verify_services
         ;;
     status)
-        compose ps
+        compose ps -a
         compose exec -T backend bench --site "$RPM_SITE" list-apps
         ;;
     backup)
@@ -65,6 +99,12 @@ case "$command" in
         compose run --rm --no-deps backend bench --site "$RPM_SITE" migrate
         compose up -d backend websocket queue-short queue-long scheduler frontend
         compose exec -T backend bench --site "$RPM_SITE" set-maintenance-mode off
+        verify_services
+        ;;
+    verify) verify_services ;;
+    repair-workers)
+        compose up -d --no-deps queue-short queue-long
+        verify_services
         ;;
     enroll)
         [[ $# == 3 ]] || { echo 'Usage: enroll USER_EMAIL employee|manager'; exit 1; }
@@ -73,5 +113,5 @@ case "$command" in
         compose exec -T backend /home/frappe/frappe-bench/env/bin/python -c 'import json,subprocess,sys; subprocess.run(["bench","--site",sys.argv[1],"execute","rpm_worklog.bootstrap.enroll","--kwargs",json.dumps({"user":sys.argv[2],"manager":sys.argv[3]=="manager"})],check=True)' "$RPM_SITE" "$2" "$3"
         ;;
     logs) compose logs --tail 100 backend frontend queue-short queue-long scheduler ;;
-    *) echo 'Commands: configure | build | init | status | backup | update | enroll EMAIL employee|manager | logs' ;;
+    *) echo 'Commands: configure | build | init | status | verify | repair-workers | backup | update | enroll EMAIL employee|manager | logs' ;;
 esac

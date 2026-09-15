@@ -133,3 +133,23 @@ bash deploy/deploy.sh status
 - 備份後在另一隔離站 restore＋migrate，確認合成 Activity Type 標記、私人測試附件內容及三個報表設定完整。
 - Bash／JavaScript 語法檢查通過，backend healthcheck healthy。
 - 此為本機 Docker Linux 全新安裝演練；未宣稱已在實際 Ubuntu VM 執行，也未替代使用者的瀏覽器驗收。
+
+## 2026-09-15 queue-short 修正
+
+abb1d86 的行內 YAML 未將 `short,default` 加引號，解析後變成兩個參數。映像實測 Bench 5.31.0／Frappe 16.33.0 的 `bench worker --help` 要求逗號分隔的單一字串；正確設定為 `command: [bench, worker, --queue, "short,default"]`。
+
+已部署 abb1d86 且僅 worker 啟動異常的 VM，於 repo 目錄執行：
+
+```bash
+git pull --ff-only origin master
+bash deploy/deploy.sh repair-workers
+bash deploy/deploy.sh status
+```
+
+此修正只需套用 Compose，不需重新 build、init 或修改 VM 檔案。repair-workers 讓 Compose 套用 worker 設定，再檢查所有九個常駐服務。保留既有資料庫、附件、密碼與站台。
+
+新安裝及一般 update 現在也會執行穩定性檢查：等待服務 running／已定義的健康檢查通過後，連續觀察 60 秒；任一服務停止、健康檢查失敗或容器重啟／更換則回報失敗。可獨立執行 `bash deploy/deploy.sh verify`。這是啟動檢查，不取代長期監控或實際背景工作驗收。
+
+此修正重新以空白 volumes 建站，並額外投遞 short、default、long 三個背景工作，確認均 finished。Compose 參數回歸測試為 `scripts/test_compose_queues.py`，使用 Docker Compose 實際解析結果檢查 argv。
+
+重新驗證結果：全新部署的 db、redis-cache、redis-queue、backend、websocket、queue-short、queue-long、scheduler、frontend 九個服務，在至少 180 秒觀察期間均 running、RestartCount=0，容器啟動時間未變；DB／backend 的健康檢查為 healthy。三種佇列測試工作均完成（`scripts/test_worker_queues.py`）。這是本機隔離新站的實測，VM 仍需拉取並執行上述修復指令。
