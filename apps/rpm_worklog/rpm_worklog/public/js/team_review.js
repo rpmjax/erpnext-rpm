@@ -29,7 +29,7 @@ frappe.ui.form.on('RPM Team Work Log Viewer', {
 function load_team(frm, from_date, to_date) {
     const target = frm.fields_dict.results.$wrapper.find('.team-results');
     target.empty().text('查詢中…');
-    frappe.call('rpm_team_worklogs', {from_date, to_date}).then(r => {
+    frappe.call('rpm_worklog.queries.team_summary', {from_date, to_date}).then(r => {
         const data = r.message;
         const esc = value => frappe.utils.escape_html(String(value ?? ''));
         let html = `<p>有效直屬員工 ${data.direct_report_count} 位；本次顯示 ${data.logs.length} 張。${data.truncated ? '超過 300 張，請縮小日期範圍。' : ''}</p>`;

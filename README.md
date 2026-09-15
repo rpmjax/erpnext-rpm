@@ -4,6 +4,8 @@
 
 ## 目前狀態
 
+2026-09-15 最新：[SSH VM 部署指令](docs/ssh-vm-deploy.md)已提供獨立 Compose、空白站初始化、帳號開通、備份與更新。全新安裝、審核／權限與還原演練通過；Ubuntu VM 尚待使用者部署，真實人員不包含在套件內。此狀態取代下方「套件尚未完成」的歷史紀錄。
+
 2026-09-15：[Ubuntu／Hyper-V 正式上線操作手冊](docs/ubuntu-hyperv-go-live-runbook.md)已準備，涵蓋安裝前置工作、資料與備份、驗收、搬機、切換與回滾；尚未執行 VM 部署。
 
 2026-09-14 最新：[進度、真實工號待辦與 VM SSH 部署準備](docs/progress-and-vm-deployment-2026-09-14.md)。[可設定報表／圖表第一版](docs/worklog-analytics-poc.md)已部署本機 Docker，數值 HTML 顯示已修正；真實工號搜尋尚未實作，VM 安裝移植尚未完成。下方為歷史進度。
