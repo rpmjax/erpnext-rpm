@@ -153,3 +153,9 @@ bash deploy/deploy.sh status
 此修正重新以空白 volumes 建站，並額外投遞 short、default、long 三個背景工作，確認均 finished。Compose 參數回歸測試為 `scripts/test_compose_queues.py`，使用 Docker Compose 實際解析結果檢查 argv。
 
 重新驗證結果：全新部署的 db、redis-cache、redis-queue、backend、websocket、queue-short、queue-long、scheduler、frontend 九個服務，在至少 180 秒觀察期間均 running、RestartCount=0，容器啟動時間未變；DB／backend 的健康檢查為 healthy。三種佇列測試工作均完成（`scripts/test_worker_queues.py`）。這是本機隔離新站的實測，VM 仍需拉取並執行上述修復指令。
+
+## 新站時區
+
+新部署固定初始化 **Frappe System Settings timezone = Asia/Taipei**，並保護首次設定精靈不被 Taiwan 的缺漏時區選項改回 Africa/Abidjan。初始化成功前會列出 `Frappe System Settings timezone -> Asia/Taipei -> PASS`。
+
+既有站台的 build／update／repair 不設定或覆寫時區。已手動修正的 VM 不需重建或重跑 init。[原因與驗證](fresh-site-timezone.md)。

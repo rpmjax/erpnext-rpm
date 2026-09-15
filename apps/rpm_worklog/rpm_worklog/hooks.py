@@ -19,3 +19,6 @@ doc_events = {
 }
 
 doc_events['RPM Work Log Report'] = {'validate': 'rpm_worklog.reports.validate_config'}
+
+doc_events['System Settings'] = {'before_validate': 'rpm_worklog.timezone.validate_settings'}
+setup_wizard_stages = 'rpm_worklog.timezone.setup_stages'
