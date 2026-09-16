@@ -163,3 +163,7 @@ bash deploy/deploy.sh status
 ## 切換內網入口
 
 192.168.0.70 仍指向舊站時，依 [內網入口切換與回復](lan-cutover.md) 先檢查現行 Nginx，再切換至 Docker 8085；不重跑 init。
+
+## enroll 布林參數修正（2026-09-16）
+
+Bench execute 的 --kwargs 使用 Python literal；舊腳本 JSON false/true 造成 NameError，開通函式尚未執行。已改用 repr(dict) 安全編碼，保留 subprocess argv 傳遞。員工／主管與引號輸入已通過 scripts/test_enroll_cli.py 及實際 Bench parser 測試。遇此錯誤只需 git pull --ff-only origin master 後重跑 enroll，不需 build、update 或 init。

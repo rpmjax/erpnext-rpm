@@ -109,8 +109,9 @@ case "$command" in
     enroll)
         [[ $# == 3 ]] || { echo 'Usage: enroll USER_EMAIL employee|manager'; exit 1; }
         [[ "$3" == employee || "$3" == manager ]] || exit 1
-        # JSON encoding happens inside Python, never interpolated into executable code.
-        compose exec -T backend /home/frappe/frappe-bench/env/bin/python -c 'import json,subprocess,sys; subprocess.run(["bench","--site",sys.argv[1],"execute","rpm_worklog.bootstrap.enroll","--kwargs",json.dumps({"user":sys.argv[2],"manager":sys.argv[3]=="manager"})],check=True)' "$RPM_SITE" "$2" "$3"
+        # Bench evaluates Python literals for --kwargs (JSON false/true is invalid).
+        # repr escapes user input; subprocess argv avoids shell interpolation.
+        compose exec -T backend /home/frappe/frappe-bench/env/bin/python -c 'import subprocess,sys; subprocess.run(["bench","--site",sys.argv[1],"execute","rpm_worklog.bootstrap.enroll","--kwargs",repr({"user":sys.argv[2],"manager":sys.argv[3]=="manager"})],check=True)' "$RPM_SITE" "$2" "$3"
         ;;
     logs) compose logs --tail 100 backend frontend queue-short queue-long scheduler ;;
     *) echo 'Commands: configure | build | init | status | verify | repair-workers | backup | update | enroll EMAIL employee|manager | logs' ;;
