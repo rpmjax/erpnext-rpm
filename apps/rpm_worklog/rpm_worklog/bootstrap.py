@@ -58,19 +58,8 @@ def install_navigation():
 
 
 def enroll(user, manager=False):
-    """Local bench execute only; no login or password creation, no broad HR rights."""
+    """Local CLI wrapper sharing the UI enrollment checks."""
     if frappe.session.user != 'Administrator':
-        frappe.throw('Administrator required',frappe.PermissionError)
-    from rpm_worklog.review import employee_for
-    employee = employee_for(user)
-    doc = frappe.get_doc('User',user)
-    if not doc.enabled or doc.user_type != 'System User':
-        frappe.throw('Enabled System User required')
-    role = 'RPM Work Log Manager Pilot' if manager else 'RPM Work Log Pilot'
-    doc.append_roles(role)
-    doc.save()
-    if not frappe.db.exists('User Permission',{'user':user,'allow':'Employee','for_value':employee}):
-        frappe.get_doc(dict(doctype='User Permission',user=user,allow='Employee',for_value=employee,
-            apply_to_all_doctypes=1,is_default=1,hide_descendants=1)).insert()
-    frappe.defaults.set_user_default('Employee',employee,user=user)
-    frappe.db.after_commit.add(frappe.clear_cache)
+        frappe.throw('Administrator required', frappe.PermissionError)
+    from rpm_worklog.access import enroll_one
+    return enroll_one(user, 'manager' if manager else 'employee')

@@ -86,6 +86,8 @@ def install():
 
     from rpm_worklog.report_setup import install as install_reports
     install_reports()
+    from rpm_worklog.access import install as install_access
+    install_access()
 
     if frappe.conf.get('rpm_worklog_managed'):
         from rpm_worklog.bootstrap import install_navigation

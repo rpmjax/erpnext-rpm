@@ -167,3 +167,7 @@ bash deploy/deploy.sh status
 ## enroll 布林參數修正（2026-09-16）
 
 Bench execute 的 --kwargs 使用 Python literal；舊腳本 JSON false/true 造成 NameError，開通函式尚未執行。已改用 repr(dict) 安全編碼，保留 subprocess argv 傳遞。員工／主管與引號輸入已通過 scripts/test_enroll_cli.py 及實際 Bench parser 測試。遇此錯誤只需 git pull --ff-only origin master 後重跑 enroll，不需 build、update 或 init。
+
+## 管理介面開通
+
+更新含開通管理功能的 App 後，System Manager 可使用 [工作紀錄開通管理](worklog-access-management.md) 單筆／批次開通，無須逐位 SSH enroll。既有 SSH 指令保留並共用相同權限衝突檢查。
