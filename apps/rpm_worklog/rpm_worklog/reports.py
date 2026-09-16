@@ -1,4 +1,4 @@
-"""Allowlisted, live-scoped Work Log aggregation. No client SQL or employee IDs."""
+"""Allowlisted Work Log aggregation with live-scoped employee selection."""
 import frappe
 from frappe import _
 from frappe.utils import getdate
@@ -74,7 +74,32 @@ def options():
 
 
 @frappe.whitelist()
-def run(report, from_date, to_date, scope='Self', state='All'):
+def search_employees(scope='Team', text=''):
+    if scope not in scopes():
+        frappe.throw(_('Not permitted'), frappe.PermissionError)
+    me = employee_for(frappe.session.user)
+    filters = {'status': 'Active'}
+    if scope == 'Self':
+        filters['name'] = me
+    else:
+        filters.update(reports_to=me, name=['!=', me])
+    text = str(text or '').strip()[:100]
+    # Escape LIKE wildcards; a typed % or _ is a literal, not a directory dump.
+    pattern = '%' + text.replace('\\', '\\\\').replace('%', '\\%').replace('_', '\\_') + '%'
+    rows = frappe.get_all('Employee', filters=filters,
+        or_filters=[[field, 'like', pattern] for field in ('employee_number', 'employee_name')],
+        fields=['name', 'employee_number', 'employee_name'],
+        order_by='employee_number, employee_name, name', limit_page_length=21)
+    return dict(employees=[dict(value=r.name, label=employee_label(r)) for r in rows[:20]],
+        has_more=len(rows) > 20)
+
+
+def employee_label(row):
+    return f"{row.employee_number or _('No employee number')} | {row.employee_name or _('Unnamed employee')}"
+
+
+@frappe.whitelist()
+def run(report, from_date, to_date, scope='Self', state='All', employee=None):
     if scope not in scopes():
         frappe.throw(_('Not permitted'), frappe.PermissionError)
     if state not in ('All', *STATES):
@@ -95,6 +120,16 @@ def run(report, from_date, to_date, scope='Self', state='All'):
         where.extend(['p.employee = %(me)s', 'p.owner = %(user)s'])
     else:
         where.extend(['e.reports_to = %(me)s', "e.status = 'Active'", 'e.name != %(me)s'])
+    selected = None
+    if employee:
+        selected = frappe.db.get_value('Employee', employee,
+            ['name', 'employee_number', 'employee_name', 'reports_to', 'status'], as_dict=True)
+        permitted = selected and selected.status == 'Active' and (
+            selected.name == me if scope == 'Self' else selected.reports_to == me and selected.name != me)
+        if not permitted:
+            frappe.throw(_('Not permitted'), frappe.PermissionError)
+        params['employee'] = employee
+        where.append('p.employee = %(employee)s')
     if state != 'All':
         where.append("COALESCE(NULLIF(p.review_state,''),'Draft') = %(state)s")
     alias = 'p' if FIELDS[doc.group_field][0] == PARENT else 'c'
@@ -111,9 +146,15 @@ def run(report, from_date, to_date, scope='Self', state='All'):
     if len(rows) > 500:
         frappe.throw(_('More than 500 groups; narrow the date range'))
     available = catalog()
+    labels = {}
+    if doc.group_field == 'employee' and rows:
+        labels = {r.name: employee_label(r) for r in frappe.get_all('Employee',
+            filters={'name': ['in', [r.bucket for r in rows]]},
+            fields=['name', 'employee_number', 'employee_name'], limit_page_length=0)}
     return dict(title=doc.report_title, grain=doc.grain, operation=doc.operation,
         group_label=available[doc.group_field]['label'], chart_type=doc.chart_type,
         scope=scope, from_date=str(start), to_date=str(end), state=state,
+        employee_label=employee_label(selected) if selected else None,
         unit='records' if doc.operation == 'Count' else 'hours',
-        rows=[dict(label=str(r.bucket) if r.bucket not in (None, '') else _('Not specified'), value=float(r.value or 0), samples=r.samples) for r in rows],
+        rows=[dict(label=labels.get(r.bucket, str(r.bucket)) if r.bucket not in (None, '') else _('Not specified'), value=float(r.value or 0), samples=r.samples) for r in rows],
         sample_count=sum(r.samples for r in rows))

@@ -1,6 +1,6 @@
 # Ubuntu VM：部署目前 Work Log 版本
 
-本套件建立獨立 ERPNext + rpm_worklog 站台，不覆蓋既有原生 Bench、不攜帶測試人員／交易資料。角色內部名稱暫沿用 Pilot，功能與目前試辦版本相同。公司、人員及真實工號需在新站建立或匯入；個別工號搜尋尚未交付。
+本套件建立獨立 ERPNext + rpm_worklog 站台，不覆蓋既有原生 Bench、不攜帶測試人員／交易資料。角色內部名稱暫沿用 Pilot，功能與目前試辦版本相同。公司、人員及真實工號需在新站建立或匯入；主管 Analytics 已支援依 Employee Number／姓名搜尋個別直屬員工。
 
 ## 1. 必要條件
 

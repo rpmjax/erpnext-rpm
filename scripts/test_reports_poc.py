@@ -30,7 +30,10 @@ try:
     assert manager and 'RPM Work Log Manager Pilot' in frappe.get_roles(manager)
     # Ensure both test employees report to the test manager inside this transaction only.
     frappe.db.set_value('Employee',emp2,'reports_to',manager_emp)
+    frappe.db.set_value('Employee',emp1,{'employee_number':'TEST-T870602','employee_name':'Same Name'})
+    frappe.db.set_value('Employee',emp2,{'employee_number':'TEST-PS00012','employee_name':'Same Name'})
     sums = profile('test log sums')
+    by_employee = profile('test employee labels', group_field='employee')
     entries = profile('test entry sums', grain='Entry', group_field='result', measure_field='hours')
     counts = profile('test counts', group_field='review_state', operation='Count', measure_field='')
     averages = profile('test averages', operation='Average')
@@ -52,6 +55,8 @@ try:
     assert query(state='Draft')['rows'] == []
     assert not frappe.has_permission(reports.CONFIG,'write')
     denied(lambda: query(scope='Team'))
+    denied(lambda: reports.search_employees('Team','TEST-'))
+    denied(lambda: reports.run(sums,'2090-01-01','2090-01-01','Self',employee=emp2))
     denied(lambda: reports.run(sums,'2090-01-01','2092-01-01'))
     denied(lambda: query(state="Approved' OR 1=1"))
     frappe.set_user(second)
@@ -59,10 +64,30 @@ try:
     frappe.set_user(manager)
     assert query(scope='Team')['sample_count'] == 302
     assert query(scope='Team')['rows'][0]['value'] == 604
+    candidates = reports.search_employees('Team','test-t870602')['employees']
+    assert len(candidates)==1 and candidates[0]['value']==emp1
+    assert candidates[0]['label']=='TEST-T870602 | Same Name'
+    assert len(reports.search_employees('Team','Same Name')['employees'])==2
+    assert reports.search_employees('Team',"' OR 1=1 --")['employees']==[]
+    assert reports.search_employees('Team','%')['employees']==[]
+    selected = reports.run(sums,'2090-01-01','2090-01-01','Team',employee=emp2)
+    assert selected['sample_count']==1 and selected['rows'][0]['value']==2
+    assert selected['employee_label']=='TEST-PS00012 | Same Name'
+    grouped = query(by_employee,scope='Team')['rows']
+    assert len(grouped)==2 and {r['label'] for r in grouped}=={'TEST-T870602 | Same Name','TEST-PS00012 | Same Name'}
+    denied(lambda: reports.run(sums,'2090-01-01','2090-01-01','Team',employee=manager_emp))
+    denied(lambda: reports.run(sums,'2090-01-01','2090-01-01','Team',employee="' OR 1=1 --"))
+    frappe.db.set_value('Employee',emp2,'status','Left')
+    assert reports.search_employees('Team','TEST-PS00012')['employees']==[]
+    denied(lambda: reports.run(sums,'2090-01-01','2090-01-01','Team',employee=emp2))
+    frappe.db.set_value('Employee',emp2,'status','Active')
     frappe.db.set_value('Employee',emp1,'reports_to',None)
     assert query(scope='Team')['sample_count'] == 1
+    assert reports.search_employees('Team','TEST-T870602')['employees']==[]
+    denied(lambda: reports.run(sums,'2090-01-01','2090-01-01','Team',employee=emp1))
     frappe.set_user('Guest')
     denied(lambda: reports.options())
+    denied(lambda: reports.search_employees())
     denied(lambda: query())
     frappe.set_user('Administrator')
     doc = frappe.get_doc(reports.CONFIG, sums)
