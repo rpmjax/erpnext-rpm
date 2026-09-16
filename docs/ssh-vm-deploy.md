@@ -159,3 +159,7 @@ bash deploy/deploy.sh status
 新部署固定初始化 **Frappe System Settings timezone = Asia/Taipei**，並保護首次設定精靈不被 Taiwan 的缺漏時區選項改回 Africa/Abidjan。初始化成功前會列出 `Frappe System Settings timezone -> Asia/Taipei -> PASS`。
 
 既有站台的 build／update／repair 不設定或覆寫時區。已手動修正的 VM 不需重建或重跑 init。[原因與驗證](fresh-site-timezone.md)。
+
+## 切換內網入口
+
+192.168.0.70 仍指向舊站時，依 [內網入口切換與回復](lan-cutover.md) 先檢查現行 Nginx，再切換至 Docker 8085；不重跑 init。
