@@ -23,6 +23,9 @@ try:
     frappe.set_user(user);doc.save();assert doc.lines[0].item_name_snapshot=='Material selection test'
     doc.lines[0].item_code='';doc.save();assert not doc.lines[0].item_name_snapshot and doc.lines[0].work_item=='My own description'
     doc.lines[0].item_code=code;doc.save()
+    doc.lines[0].work_item='跨部門協助，未登記物料';doc.save();doc.reload()
+    assert not doc.lines[0].item_code and doc.lines[0].work_item=='跨部門協助，未登記物料'
+    doc.lines[0].item_code=code;doc.save()
     transition(doc.name,'submit',frappe.db.get_value(doc.doctype,doc.name,'modified'))
     doc.reload();doc.lines[0].item_code='';denied(lambda:doc.save())
     frappe.set_user('Administrator');frappe.db.set_value('Item',code,'disabled',1)

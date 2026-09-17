@@ -30,13 +30,15 @@ def install():
             f.description = '勾選表示記錄數量，數量可為 0；目前暫不使用單位。'
     for f in line.fields:
         if f.fieldname == 'work_item':
-            f.hidden = 1
-            f.in_list_view = 0
-            f.reqd = 0
-            f.read_only = 1
-        if f.fieldname == 'item_code':
-            f.read_only = 0
+            f.hidden = 0
             f.in_list_view = 1
+            f.reqd = 0
+            f.read_only = 0
+            f.label = '工作內容／物料'
+            f.columns = 3
+        if f.fieldname == 'item_code':
+            f.read_only = 1
+            f.in_list_view = 0
             f.columns = 3
             f.description = '輸入物料代碼或品名，例如 sho，再點選候選物料。'
     material_names = ['item_code', 'item_name_snapshot', 'search_item', 'clear_item']
@@ -46,6 +48,10 @@ def install():
     line.fields = remaining[:position] + material_fields + remaining[position:]
     for index, f in enumerate(line.fields, 1): f.idx = index
     line.save()
+    # Populate only the formerly hidden empty display field; retain links and existing text.
+    frappe.db.sql("""UPDATE `tabRPM Work Log Line` SET work_item=LEFT(CONCAT(item_code,
+        CASE WHEN COALESCE(item_name_snapshot,'')='' THEN '' ELSE CONCAT(' | ',item_name_snapshot) END),140)
+        WHERE COALESCE(work_item,'')='' AND COALESCE(item_code,'')!=''""")
     dt=frappe.get_doc('DocType','RPM Daily Work Log')
     for field in [dict(fieldname='review_state',label='Review Status',fieldtype='Select',options='Draft\nPending Review\nReturned\nApproved',default='Draft',read_only=1,in_list_view=1),dict(fieldname='return_reason',label='Return Reason',fieldtype='Small Text',read_only=1)]:
         if not any(f.fieldname==field['fieldname'] for f in dt.fields):dt.append('fields',field)

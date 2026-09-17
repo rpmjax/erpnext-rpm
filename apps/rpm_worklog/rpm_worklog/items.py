@@ -34,15 +34,20 @@ def search_items(text=''):
 def validate_items(doc):
     old = {}
     if not doc.is_new():
-        old = {r.name:r for r in frappe.get_all('RPM Work Log Line', filters={'parent':doc.name,'parenttype':doc.doctype},fields=['name','item_code','item_name_snapshot'])}
+        old = {r.name:r for r in frappe.get_all('RPM Work Log Line', filters={'parent':doc.name,'parenttype':doc.doctype},fields=['name','item_code','item_name_snapshot','work_item'])}
     for row in doc.lines:
+        previous = old.get(row.name)
+        # Editing free content must not silently keep the old material association.
+        if row.item_code and previous and previous.item_code == row.item_code and row.work_item != previous.work_item:
+            expected = f'{row.item_code} | {previous.item_name_snapshot or ""}'[:140]
+            if row.work_item != expected:
+                row.item_code = None
         if not row.item_code:
             row.item_name_snapshot = None
             row.item_stock_uom = None
             row.item_conversion_factor = None
             continue
         item, units = item_data(row.item_code)
-        previous = old.get(row.name)
         row.item_name_snapshot = previous.item_name_snapshot if previous and previous.item_code == row.item_code and previous.item_name_snapshot else item.item_name
         # Units temporarily disabled: do not fill, convert, or overwrite stored unit values.
 

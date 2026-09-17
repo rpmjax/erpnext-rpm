@@ -31,5 +31,5 @@ def team_summary(from_date,to_date):
         fields=['name','work_date','title','employee','employee_name','department','total_hours','review_state','modified'],order_by='work_date desc, name',limit_page_length=301) if employees else []
     for row in rows[:300]:
         row.lines=frappe.get_all('RPM Work Log Line',filters={'parent':row.name,'parenttype':'RPM Daily Work Log','parentfield':'lines'},
-            fields=['activity_type','item_code','item_name_snapshot','quantity','result','hours','note'],order_by='idx',limit_page_length=0)
+            fields=['activity_type','work_item','item_code','item_name_snapshot','quantity','result','hours','note'],order_by='idx',limit_page_length=0)
     return dict(logs=rows[:300],truncated=len(rows)>300,direct_report_count=len(employees))
