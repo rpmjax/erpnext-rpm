@@ -29,12 +29,17 @@ def inspect_user(user):
         reasons.append('必須唯一綁定一筆 Active Employee')
     employee = employees[0] if len(employees) == 1 else None
     permissions = frappe.get_all('User Permission', filters={'user': user, 'allow': 'Employee'},
-        fields=['for_value', 'apply_to_all_doctypes', 'is_default', 'hide_descendants'], limit_page_length=0)
+        fields=['name', 'for_value', 'apply_to_all_doctypes', 'is_default', 'hide_descendants'], limit_page_length=0)
     if employee and any(p.for_value != employee.name for p in permissions):
         reasons.append('既有 Employee User Permission 指向其他員工，請先人工核對')
     own = [p for p in permissions if employee and p.for_value == employee.name]
-    if len(own) > 1 or any(not (p.apply_to_all_doctypes and p.is_default and p.hide_descendants) for p in own):
-        reasons.append('既有本人 Employee User Permission 設定不同，請先人工核對')
+    adjustments = []
+    if len(own) > 1:
+        reasons.append('有多筆本人 Employee User Permission，請先人工核對')
+    elif own:
+        for field, label in [('apply_to_all_doctypes','套用至所有文件'), ('is_default','設為預設'), ('hide_descendants','不包含下屬')]:
+            if not own[0].get(field):
+                adjustments.append(f'{label}：未勾選 → 勾選')
     default = frappe.db.get_value('DefaultValue', {'parent': user, 'defkey': 'Employee'}, 'defvalue')
     if employee and default and default != employee.name:
         reasons.append('預設 Employee 與目前綁定不符，請先人工核對')
@@ -42,7 +47,8 @@ def inspect_user(user):
     return dict(user=user, full_name=doc.full_name, employee=employee.name if employee else None,
         employee_label=f'{employee.employee_number or "未填工號"} | {employee.employee_name}' if employee else '',
         employee_role=EMPLOYEE_ROLE in roles, manager_role=MANAGER_ROLE in roles,
-        ready=bool(employee and own and default == employee.name and not reasons), reasons=reasons)
+        ready=bool(employee and own and default == employee.name and not reasons and not adjustments),
+        reasons=reasons, adjustments=adjustments, own_permission=own[0].name if len(own) == 1 else None)
 
 
 @frappe.whitelist()
@@ -56,7 +62,7 @@ def users(text=''):
     return dict(users=[inspect_user(user) for user in rows[:50]], has_more=len(rows) > 50)
 
 
-def enroll_one(user, mode):
+def enroll_one(user, mode, normalize_own=False):
     require_admin()
     if mode not in ('employee', 'manager'):
         frappe.throw('Invalid enrollment mode')
@@ -64,6 +70,8 @@ def enroll_one(user, mode):
     status = inspect_user(user)
     if status['reasons']:
         frappe.throw('；'.join(status['reasons']))
+    if status['adjustments'] and not normalize_own:
+        frappe.throw('需管理員確認本人權限調整：' + '；'.join(status['adjustments']))
     role = MANAGER_ROLE if mode == 'manager' else EMPLOYEE_ROLE
     if status['ready'] and status[mode + '_role']:
         return 'unchanged'
@@ -72,18 +80,24 @@ def enroll_one(user, mode):
     doc.save(ignore_permissions=True)
     if role not in [r.role for r in doc.roles]:
         frappe.throw('角色設定未保留 Work Log 角色，請檢查 Role Profile')
+    if status['adjustments']:
+        permission = frappe.get_doc('User Permission', status['own_permission'])
+        permission.update(dict(apply_to_all_doctypes=1, is_default=1, hide_descendants=1))
+        permission.save(ignore_permissions=True)
     if not frappe.db.exists('User Permission', {'user': user, 'allow': 'Employee', 'for_value': status['employee']}):
         frappe.get_doc(dict(doctype='User Permission', user=user, allow='Employee', for_value=status['employee'],
             apply_to_all_doctypes=1, is_default=1, hide_descendants=1)).insert(ignore_permissions=True)
     frappe.defaults.set_user_default('Employee', status['employee'], user=user)
-    doc.add_comment('Info', f'Work Log enrollment: {mode}; actor: {frappe.session.user}')
+    doc.add_comment('Info', f'Work Log enrollment: {mode}; actor: {frappe.session.user}; adjustments: ' + '；'.join(status['adjustments']))
     frappe.db.after_commit.add(frappe.clear_cache)
     return 'enrolled'
 
 
 @frappe.whitelist(methods=['POST'])
-def enroll(users, mode='employee'):
+def enroll(users, mode='employee', normalize_own=0):
     require_admin()
+    if str(normalize_own) not in ('0', '1'):
+        frappe.throw('Invalid normalization confirmation')
     users = frappe.parse_json(users) if isinstance(users, str) else users
     if mode not in ('employee', 'manager') or not isinstance(users, list) or not 1 <= len(users) <= 50:
         frappe.throw('Select 1–50 users and a valid mode')
@@ -94,7 +108,7 @@ def enroll(users, mode='employee'):
         point = f'worklog_enroll_{i}'
         frappe.db.savepoint(point)
         try:
-            result = enroll_one(user, mode)
+            result = enroll_one(user, mode, normalize_own=str(normalize_own) == '1')
             results.append(dict(user=user, status=result))
         except (frappe.ValidationError, frappe.DoesNotExistError) as exc:
             frappe.db.rollback(save_point=point)

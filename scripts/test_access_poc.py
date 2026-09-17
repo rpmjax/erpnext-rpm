@@ -51,6 +51,14 @@ try:
     assert frappe.db.count('User Permission', {'user':user,'allow':'Employee'}) == 2
     assert frappe.db.get_value('Employee', first.name, 'reports_to') == original_manager
     frappe.db.delete('User Permission', {'user':user, 'allow':'Employee', 'for_value':second.name})
+    permission = frappe.db.get_value('User Permission', {'user':user,'allow':'Employee'}, 'name')
+    frappe.db.set_value('User Permission', permission, {'is_default':0,'hide_descendants':0})
+    assert len(access.inspect_user(user)['adjustments']) == 2
+    assert access.enroll([user], 'employee')[0]['status'] == 'failed'
+    assert access.enroll([user], 'employee', normalize_own=1)[0]['status'] == 'enrolled'
+    assert access.inspect_user(user)['ready']
+    assert frappe.db.count('User Permission', {'user':user,'allow':'Employee'}) == 1
+    assert access.enroll([user], 'employee', normalize_own=1)[0]['status'] == 'unchanged'
     frappe.db.set_value('User',user,'enabled',0)
     assert access.enroll([user], 'employee')[0]['status'] == 'failed'
     frappe.db.set_value('User',user,'enabled',1)

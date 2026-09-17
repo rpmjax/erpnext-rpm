@@ -13,7 +13,7 @@
 6. 使用者登出再登入，確認入口、本人紀錄與主管範圍。
 7. 以一般員工／Work Log 主管開啟管理頁或 API，應被拒絕。
 
-既有 Employee User Permission 指向其他員工、範圍旗標不同、預設員工衝突時停止開通，提示人工核對；不刪除或覆寫既有權限。不建立帳號、不修改密碼、不改 Reports To、不撤銷其他角色。
+既有 Employee User Permission 指向其他員工、重複本人權限、預設員工衝突時停止開通，提示人工核對；不刪除或覆寫既有權限。不建立帳號、不修改密碼、不改 Reports To、不撤銷其他角色。
 每次有變更的開通，在該 User 的 Comment 留下操作人與模式。SSH enroll 共用同一檢查邏輯。
 本版只處理授權開通；離職、撤銷角色、調整既有衝突仍由管理員在原生設定處理。
 
@@ -38,3 +38,8 @@ bash deploy/deploy.sh status
 更新後管理員重新登入，開啟 http://192.168.0.70/desk/rpm-work-log-access/RPM%20Work%20Log%20Access 。
 
 實際 HTTP 拒絕測試 scripts/test_access_http.py 通過：一般員工與 Work Log 主管的管理頁讀取、帳號查詢、開通端點均 403，Guest 查詢遭拒。
+
+## 2026-09-17 本人權限差異修正
+
+既有唯一本人權限的 apply_to_all_doctypes、is_default、hide_descendants 未勾選時，列出差異而非禁用勾選。按開通後確認視窗逐人顯示調整；明確確認後才將三項設為 1。此設定會影響其他 ERPNext 文件的 Employee 範圍，尤其 Employee 為樹狀文件，hide_descendants 會排除下屬。不同員工、重複權限與預設員工衝突仍阻擋，API 無 normalize_own=1 也拒絕修改。調整記入 User 稽核留言。頁首改為管理操作，表格加最小寬度與橫向捲動，避免窄畫面每字換行。
+回滾測試已驗證未確認拒絕、確認後原筆調整、不重複新增及重複開通不變。
