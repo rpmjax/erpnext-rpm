@@ -3,6 +3,13 @@ frappe.ui.form.on('RPM Daily Work Log', {
         frm.set_query('item_code', 'lines', () => ({query:'rpm_worklog.items.link_query'}));
         let sequence = 0, timer, menu;
         const close = () => { ++sequence; clearTimeout(timer); if (menu) menu.remove(); };
+        $(frm.wrapper).on('focusin.rpmMaterialTarget click.rpmMaterialTarget', '[data-fieldname="lines"] .grid-row', function() {
+            const name = $(this).attr('data-name');
+            if ((frm.doc.lines || []).some(r => r.name === name) && frm.rpm_material_row !== name) {
+                frm.rpm_material_row = name;
+                rpm_material_toolbar(frm);
+            }
+        });
         $(frm.wrapper).on('input.rpmFreeItem', 'input[data-fieldname="work_item"]', function() {
             close();
             const input = this, text = input.value;
@@ -35,11 +42,13 @@ function rpm_material_toolbar(frm) {
     if (locked) { $('<p>').text('目前紀錄已鎖定，不能變更物料關聯。').appendTo(area); return; }
     const label = $('<label>').text('操作工作列：').appendTo(area);
     const select = $('<select class="form-control" style="display:inline-block;width:auto;max-width:100%;margin:0 8px">').appendTo(label);
+    $('<option>').val('').text('請選擇目標工作列').appendTo(select);
     rows.forEach(row => $('<option>').val(row.name).text(`第 ${row.idx} 列${row.item_code ? '｜' + row.item_code : '｜未關聯物料'}`).appendTo(select));
     if (rows.some(row => row.name === frm.rpm_material_row)) select.val(frm.rpm_material_row);
     select.on('change', () => { frm.rpm_material_row = select.val(); });
     const action = event => {
         const row = (frm.doc.lines || []).find(row => row.name === select.val());
+        if (!row) { frappe.msgprint('請先選擇要操作的工作列。'); return; }
         if (row) { frm.rpm_material_row = row.name; frm.script_manager.trigger(event,row.doctype,row.name); }
     };
     $('<button type="button" class="btn btn-primary" style="margin:4px">').text(__('Search Item')).appendTo(area).on('click', () => action('search_item'));
@@ -49,13 +58,13 @@ frappe.ui.form.on('RPM Work Log Line', {
     work_item(frm,cdt,cdn) {
         frappe.model.set_value(cdt,cdn,{item_code:'',item_name_snapshot:''});
     },
-    lines_add(frm) { rpm_material_toolbar(frm); },
+    lines_add(frm,cdt,cdn) { frm.rpm_material_row = cdn; rpm_material_toolbar(frm); },
     lines_remove(frm) { rpm_material_toolbar(frm); },
     item_code(frm, cdt, cdn) { frappe.model.set_value(cdt, cdn, 'item_name_snapshot', ''); rpm_material_toolbar(frm); },
     search_item(frm, cdt, cdn) {
         if (['Pending Review','Approved'].includes(frm.doc.review_state)) return;
         const row = locals[cdt][cdn];
-        const dialog = new frappe.ui.Dialog({title:__('Search Item'),fields:[
+        const dialog = new frappe.ui.Dialog({title:`搜尋物料 — 第 ${row.idx} 列`,fields:[
             {fieldname:'keyword',label:__('Item code or name'),fieldtype:'Data'},
             {fieldname:'matches',fieldtype:'HTML'}
         ]});
@@ -88,8 +97,18 @@ frappe.ui.form.on('RPM Work Log Line', {
     }
 });
 async function rpm_choose_item(frm,row,item) {
-    if (['Pending Review','Approved'].includes(frm.doc.review_state)) return;
-    await frappe.model.set_value(row.doctype,row.name,'work_item',`${item.name} | ${item.item_name}`.slice(0,140));
+    const valid = () => (frm.doc.lines || []).includes(row) && !['Pending Review','Approved'].includes(frm.doc.review_state);
+    if (!valid()) return;
+    const text = `${item.name} | ${item.item_name}`.slice(0,140);
+    const original = row.work_item || '';
+    if (original && original !== text) {
+        const esc = frappe.utils.escape_html;
+        const confirmed = await new Promise(resolve => frappe.confirm(
+            `將替換第 ${row.idx} 列的內容「${esc(original)}」為「${esc(text)}」。其他列不變，是否繼續？`,
+            () => resolve(true), () => resolve(false)));
+        if (!confirmed || !valid() || (row.work_item || '') !== original) return;
+    }
+    await frappe.model.set_value(row.doctype,row.name,'work_item',text);
     await frappe.model.set_value(row.doctype,row.name,'item_code',item.name);
     await frappe.model.set_value(row.doctype,row.name,'item_name_snapshot',item.item_name);
 }
