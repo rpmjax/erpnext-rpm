@@ -53,6 +53,8 @@ def install():
         CASE WHEN COALESCE(item_name_snapshot,'')='' THEN '' ELSE CONCAT(' | ',item_name_snapshot) END),140)
         WHERE COALESCE(work_item,'')='' AND COALESCE(item_code,'')!=''""")
     dt=frappe.get_doc('DocType','RPM Daily Work Log')
+    if not dt.get('fields', {'fieldname':'employee_display'}):
+        dt.append('fields',dict(fieldname='employee_display',label='Employee Display',fieldtype='HTML'))
     for field in [dict(fieldname='review_state',label='Review Status',fieldtype='Select',options='Draft\nPending Review\nReturned\nApproved',default='Draft',read_only=1,in_list_view=1),dict(fieldname='return_reason',label='Return Reason',fieldtype='Small Text',read_only=1)]:
         if not any(f.fieldname==field['fieldname'] for f in dt.fields):dt.append('fields',field)
     hint = next((f for f in dt.fields if f.fieldname == 'work_entry_help'), None)
@@ -62,7 +64,7 @@ def install():
     dt.fields.remove(hint)
     dt.fields.insert(next(i for i, f in enumerate(dt.fields) if f.fieldname == 'lines'), hint)
     # Keep identity, totals and review state together before work entries.
-    summary_order = ['title', 'work_date', 'employee', 'employee_name', 'department', 'total_hours', 'review_state', 'return_reason']
+    summary_order = ['title', 'work_date', 'employee_display', 'employee', 'employee_name', 'department', 'total_hours', 'review_state', 'return_reason']
     summary_fields = [f for name in summary_order for f in dt.fields if f.fieldname == name]
     other_fields = [f for f in dt.fields if f.fieldname not in summary_order]
     dt.fields = summary_fields + other_fields
@@ -80,7 +82,7 @@ def install():
     if frappe.db.exists('Server Script','RPM Work Log Validation'):
         frappe.db.set_value('Server Script','RPM Work Log Validation','disabled',1)
     root=Path(__file__).parent / 'public' / 'js'
-    for name,dt,source in [('RPM Item Picker','RPM Daily Work Log','item_picker.js'),('RPM Employee Review','RPM Daily Work Log','employee_review.js'),('RPM Team Viewer','RPM Team Work Log Viewer','team_review.js')]:
+    for name,dt,source in [('RPM Identity Display','RPM Daily Work Log','identity.js'),('RPM Item Picker','RPM Daily Work Log','item_picker.js'),('RPM Employee Review','RPM Daily Work Log','employee_review.js'),('RPM Team Viewer','RPM Team Work Log Viewer','team_review.js')]:
         d=frappe.get_doc('Client Script',name) if frappe.db.exists('Client Script',name) else frappe.new_doc('Client Script')
         d.update(dict(name=name,dt=dt,view='Form',enabled=1,script=root.joinpath(source).read_text(encoding='utf-8-sig')));d.save()
     name='RPM Bulk Submit'

@@ -34,7 +34,7 @@ function load_team(frm, from_date, to_date) {
         const esc = value => frappe.utils.escape_html(String(value ?? ''));
         let html = `<p>有效直屬員工 ${data.direct_report_count} 位；本次顯示 ${data.logs.length} 張。${data.truncated ? '超過 300 張，請縮小日期範圍。' : ''}</p>`;
         for (const log of data.logs) {
-            html += `<details style="margin-bottom:16px"><summary>${esc(log.work_date)} | ${esc(log.employee_name)} | ${esc(log.department)} | ${esc(log.title)} | ${esc(log.total_hours)} 小時 | ${esc(log.name)} | ${esc(__(log.review_state || 'Draft'))}</summary><div class="table-responsive"><table class="table table-bordered"><thead><tr><th>分類</th><th>工作內容／物料</th><th>數量</th><th>結果</th><th>工時</th><th>備註</th></tr></thead><tbody>`;
+            html += `<details style="margin-bottom:16px"><summary>${esc(log.work_date)} | ${esc(log.employee_label || log.employee_name)} | ${esc(log.department)} | ${esc(log.title)} | ${esc(log.total_hours)} 小時 | ${esc(log.name)} | ${esc(__(log.review_state || 'Draft'))}</summary><div class="table-responsive"><table class="table table-bordered"><thead><tr><th>分類</th><th>工作內容／物料</th><th>數量</th><th>結果</th><th>工時</th><th>備註</th></tr></thead><tbody>`;
             for (const row of log.lines) html += `<tr><td>${esc(row.activity_type)}</td><td>${esc(row.work_item || [row.item_code,row.item_name_snapshot].filter(Boolean).join(" | "))}</td><td>${esc(row.quantity)}</td><td>${esc(row.result)}</td><td>${esc(row.hours)}</td><td>${esc(row.note)}</td></tr>`;
                         html += '</tbody></table></div>';
             const index = data.logs.indexOf(log);

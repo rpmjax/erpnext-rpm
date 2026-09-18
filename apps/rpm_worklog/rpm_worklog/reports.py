@@ -3,6 +3,8 @@ import frappe
 from frappe import _
 from frappe.utils import getdate
 from rpm_worklog.review import employee_for
+from rpm_worklog.scope import scopes, employee_filters, log_scope
+from rpm_worklog.identity import label as employee_label, FIELDS as IDENTITY_FIELDS
 
 PARENT = 'RPM Daily Work Log'
 CHILD = 'RPM Work Log Line'
@@ -51,21 +53,6 @@ def validate_config(doc, method=None):
         frappe.throw(_('Report title is required'))
 
 
-def scopes():
-    if frappe.session.user == 'Guest' or not frappe.db.get_value('User', frappe.session.user, 'enabled'):
-        frappe.throw(_('Not permitted'), frappe.PermissionError)
-    roles = frappe.get_roles()
-    employee_for(frappe.session.user)
-    allowed = []
-    if 'RPM Work Log Pilot' in roles:
-        allowed.append('Self')
-    if 'RPM Work Log Manager Pilot' in roles:
-        allowed.append('Team')
-    if not allowed:
-        frappe.throw(_('Not permitted'), frappe.PermissionError)
-    return allowed
-
-
 @frappe.whitelist()
 def options():
     allowed = scopes()
@@ -77,25 +64,16 @@ def options():
 def search_employees(scope='Team', text=''):
     if scope not in scopes():
         frappe.throw(_('Not permitted'), frappe.PermissionError)
-    me = employee_for(frappe.session.user)
-    filters = {'status': 'Active'}
-    if scope == 'Self':
-        filters['name'] = me
-    else:
-        filters.update(reports_to=me, name=['!=', me])
+    filters = employee_filters(scope)
     text = str(text or '').strip()[:100]
     # Escape LIKE wildcards; a typed % or _ is a literal, not a directory dump.
     pattern = '%' + text.replace('\\', '\\\\').replace('%', '\\%').replace('_', '\\_') + '%'
     rows = frappe.get_all('Employee', filters=filters,
         or_filters=[[field, 'like', pattern] for field in ('employee_number', 'employee_name')],
-        fields=['name', 'employee_number', 'employee_name'],
+        fields=IDENTITY_FIELDS,
         order_by='employee_number, employee_name, name', limit_page_length=21)
     return dict(employees=[dict(value=r.name, label=employee_label(r)) for r in rows[:20]],
         has_more=len(rows) > 20)
-
-
-def employee_label(row):
-    return f"{row.employee_number or _('No employee number')} | {row.employee_name or _('Unnamed employee')}"
 
 
 @frappe.whitelist()
@@ -115,15 +93,13 @@ def run(report, from_date, to_date, scope='Self', state='All', employee=None):
     validate_config(doc)  # Revalidate current metadata, even for existing saved profiles.
     me = employee_for(frappe.session.user)
     params = {'me': me, 'user': frappe.session.user, 'start': start, 'end': end, 'state': state}
-    where = ['p.work_date BETWEEN %(start)s AND %(end)s', "COALESCE(p.docstatus,0) != 2"]
-    if scope == 'Self':
-        where.extend(['p.employee = %(me)s', 'p.owner = %(user)s'])
-    else:
-        where.extend(['e.reports_to = %(me)s', "e.status = 'Active'", 'e.name != %(me)s'])
+    where, scope_params = log_scope(scope)
+    params.update(scope_params)
+    where.append('p.work_date BETWEEN %(start)s AND %(end)s')
     selected = None
     if employee:
         selected = frappe.db.get_value('Employee', employee,
-            ['name', 'employee_number', 'employee_name', 'reports_to', 'status'], as_dict=True)
+            IDENTITY_FIELDS + ['reports_to', 'status'], as_dict=True)
         permitted = selected and selected.status == 'Active' and (
             selected.name == me if scope == 'Self' else selected.reports_to == me and selected.name != me)
         if not permitted:
@@ -150,7 +126,7 @@ def run(report, from_date, to_date, scope='Self', state='All', employee=None):
     if doc.group_field == 'employee' and rows:
         labels = {r.name: employee_label(r) for r in frappe.get_all('Employee',
             filters={'name': ['in', [r.bucket for r in rows]]},
-            fields=['name', 'employee_number', 'employee_name'], limit_page_length=0)}
+            fields=IDENTITY_FIELDS, limit_page_length=0)}
     return dict(title=doc.report_title, grain=doc.grain, operation=doc.operation,
         group_label=available[doc.group_field]['label'], chart_type=doc.chart_type,
         scope=scope, from_date=str(start), to_date=str(end), state=state,

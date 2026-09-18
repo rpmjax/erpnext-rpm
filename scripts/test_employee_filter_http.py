@@ -19,7 +19,7 @@ try:
         candidates = response.json()['message']['employees']
         assert candidates
         chosen = candidates[0]
-        number = chosen['label'].split(' | ')[0]
+        number = chosen['label'].split(' | ')[-1]
         found = session.get(endpoint + 'search_employees', params={'scope': scope, 'text': number})
         assert chosen in found.json()['message']['employees']
         options = session.get(endpoint + 'options').json()['message']

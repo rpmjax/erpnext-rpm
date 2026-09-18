@@ -1,6 +1,7 @@
 """Explicit administrator enrollment; no automatic role grants or account creation."""
 from pathlib import Path
 import frappe
+from rpm_worklog.identity import label as identity_label, FIELDS as IDENTITY_FIELDS
 
 EMPLOYEE_ROLE = 'RPM Work Log Pilot'
 MANAGER_ROLE = 'RPM Work Log Manager Pilot'
@@ -17,7 +18,7 @@ def require_admin():
 def inspect_user(user):
     doc = frappe.get_doc('User', user)
     employees = frappe.get_all('Employee', filters={'user_id': user, 'status': 'Active'},
-        fields=['name', 'employee_number', 'employee_name'], limit_page_length=2)
+        fields=IDENTITY_FIELDS, limit_page_length=2)
     reasons = []
     if user in ('Guest', 'Administrator'):
         reasons.append('系統內建帳號不開通')
@@ -45,7 +46,7 @@ def inspect_user(user):
         reasons.append('預設 Employee 與目前綁定不符，請先人工核對')
     roles = [r.role for r in doc.roles]
     return dict(user=user, full_name=doc.full_name, employee=employee.name if employee else None,
-        employee_label=f'{employee.employee_number or "未填工號"} | {employee.employee_name}' if employee else '',
+        employee_label=identity_label(employee) if employee else '',
         employee_role=EMPLOYEE_ROLE in roles, manager_role=MANAGER_ROLE in roles,
         ready=bool(employee and own and default == employee.name and not reasons and not adjustments),
         reasons=reasons, adjustments=adjustments, own_permission=own[0].name if len(own) == 1 else None)

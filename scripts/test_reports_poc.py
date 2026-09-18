@@ -1,6 +1,6 @@
 """Rollback-only aggregation/security checks for the isolated PoC site."""
 import frappe
-from rpm_worklog import reports
+from rpm_worklog import reports, queries
 assert frappe.local.site == 'frontend' and frappe.conf.get('rpm_worklog_model_poc')
 
 
@@ -30,8 +30,8 @@ try:
     assert manager and 'RPM Work Log Manager Pilot' in frappe.get_roles(manager)
     # Ensure both test employees report to the test manager inside this transaction only.
     frappe.db.set_value('Employee',emp2,'reports_to',manager_emp)
-    frappe.db.set_value('Employee',emp1,{'employee_number':'TEST-T870602','employee_name':'Same Name'})
-    frappe.db.set_value('Employee',emp2,{'employee_number':'TEST-PS00012','employee_name':'Same Name'})
+    frappe.db.set_value('Employee',emp1,{'employee_number':'TEST-T870602','employee_name':'Same Name','last_name':'Same','first_name':'Name'})
+    frappe.db.set_value('Employee',emp2,{'employee_number':'TEST-PS00012','employee_name':'Same Name','last_name':'Same','first_name':'Name'})
     sums = profile('test log sums')
     by_employee = profile('test employee labels', group_field='employee')
     entries = profile('test entry sums', grain='Entry', group_field='result', measure_field='hours')
@@ -46,7 +46,12 @@ try:
     def query(p=sums, scope='Self', state='All'):
         return reports.run(p,'2090-01-01','2090-01-01',scope,state)
     frappe.set_user(first)
+    own_log=frappe.db.get_value(reports.PARENT,{'owner':first,'work_date':'2090-01-01'},'name')
+    other_log=frappe.db.get_value(reports.PARENT,{'owner':second,'work_date':'2090-01-01'},'name')
+    assert queries.worklog_identity(own_log)['display_label']=='Same Name | TEST-T870602'
+    denied(lambda: queries.worklog_identity(other_log))
     assert query()['rows'][0]['value'] == 602
+    assert queries.daily_summary('2090-01-01')['hours'] == 602
     assert query()['sample_count'] == 301  # Not truncated to 300.
     assert query(entries)['rows'][0]['value'] == 602
     assert query(entries)['sample_count'] == 602
@@ -66,15 +71,15 @@ try:
     assert query(scope='Team')['rows'][0]['value'] == 604
     candidates = reports.search_employees('Team','test-t870602')['employees']
     assert len(candidates)==1 and candidates[0]['value']==emp1
-    assert candidates[0]['label']=='TEST-T870602 | Same Name'
+    assert candidates[0]['label']=='Same Name | TEST-T870602'
     assert len(reports.search_employees('Team','Same Name')['employees'])==2
     assert reports.search_employees('Team',"' OR 1=1 --")['employees']==[]
     assert reports.search_employees('Team','%')['employees']==[]
     selected = reports.run(sums,'2090-01-01','2090-01-01','Team',employee=emp2)
     assert selected['sample_count']==1 and selected['rows'][0]['value']==2
-    assert selected['employee_label']=='TEST-PS00012 | Same Name'
+    assert selected['employee_label']=='Same Name | TEST-PS00012'
     grouped = query(by_employee,scope='Team')['rows']
-    assert len(grouped)==2 and {r['label'] for r in grouped}=={'TEST-T870602 | Same Name','TEST-PS00012 | Same Name'}
+    assert len(grouped)==2 and {r['label'] for r in grouped}=={'Same Name | TEST-T870602','Same Name | TEST-PS00012'}
     denied(lambda: reports.run(sums,'2090-01-01','2090-01-01','Team',employee=manager_emp))
     denied(lambda: reports.run(sums,'2090-01-01','2090-01-01','Team',employee="' OR 1=1 --"))
     frappe.db.set_value('Employee',emp2,'status','Left')
@@ -83,6 +88,13 @@ try:
     frappe.db.set_value('Employee',emp2,'status','Active')
     frappe.db.set_value('Employee',emp1,'reports_to',None)
     assert query(scope='Team')['sample_count'] == 1
+    details=queries.team_summary('2090-01-01','2090-01-01')
+    assert len(details['logs'])==1 and details['logs'][0].total_hours==2
+    assert details['logs'][0].employee_label=='Same Name | TEST-PS00012'
+    frappe.db.set_value('User',manager,'enabled',0)
+    denied(lambda: query(scope='Team'))
+    denied(lambda: queries.team_summary('2090-01-01','2090-01-01'))
+    frappe.db.set_value('User',manager,'enabled',1)
     assert reports.search_employees('Team','TEST-T870602')['employees']==[]
     denied(lambda: reports.run(sums,'2090-01-01','2090-01-01','Team',employee=emp1))
     frappe.set_user('Guest')
