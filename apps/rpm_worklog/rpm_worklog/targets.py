@@ -171,7 +171,20 @@ def install():
     if not line.get('fields', {'fieldname':'work_target'}):
         line.append('fields', dict(fieldname='work_target',label='跨日工作目標（選填）',fieldtype='Link',
             options=DT,description='臨時或例行工作可以留空；需要跨日追蹤時再建立目標。'))
-        line.save()
+    target_field = line.get('fields', {'fieldname':'work_target'})[0]
+    target_field.label = '跨日目標'
+    target_field.in_list_view = 1
+    target_field.reqd = 0
+    target_field.description = '選填，逐列設定；同名工作及新增列不會自動關聯。'
+    line.fields.remove(target_field)
+    position = next(i for i, field in enumerate(line.fields) if field.fieldname == 'work_item')
+    line.fields.insert(position + 1, target_field)
+    widths = dict(activity_type=2, work_item=3, work_target=2, quantity=1, result=1, hours=1)
+    for index, field in enumerate(line.fields, 1):
+        field.idx = index
+        if field.fieldname in widths:
+            field.columns = widths[field.fieldname]
+    line.save()
     script_name = 'RPM Optional Work Target'
     script = frappe.get_doc('Client Script',script_name) if frappe.db.exists('Client Script',script_name) else frappe.new_doc('Client Script')
     script.update(dict(name=script_name,dt='RPM Daily Work Log',view='Form',enabled=1,

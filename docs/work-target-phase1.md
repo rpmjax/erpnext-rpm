@@ -82,3 +82,19 @@ Use employee j250301@outlook.com and a NEW target named 驗收－跨日工時 (t
 
 Refresh the browser after deployment to load the new Client Script. Use local acceptance credentials;
 production credentials are not synchronized. Production VM update remains deferred on this branch.
+
+## Inline target selection (2026-09-18)
+User confirmed that linked work entries appear on the target with review status.
+This confirmation covers linked-row visibility and state, not every previous acceptance case.
+
+Following a missed second-row link, show optional 跨日目標 immediately after 工作內容／物料
+in the default work-entry grid. Every row remains independent; no automatic copying/linking.
+Keep quantity, result and hours visible with explicit column widths. Detail/pencil remains available.
+Existing user-customized grid layouts are preserved; users can add 跨日目標 via the grid gear.
+No new quantity calculation, completion rule or production deployment.
+
+Checks: migrated metadata order/editability/optional flag PASS; existing target permission/lifecycle
+regression PASS; JS syntax PASS; external localhost:8086 login PASS.
+Manual acceptance: reload a draft/new log; select a target directly on row 1, ensure row 2 stays blank;
+select the same target on row 2, save, then refresh target summary and confirm both entries.
+If a custom grid layout hides the new field, use its gear to select 跨日目標.
