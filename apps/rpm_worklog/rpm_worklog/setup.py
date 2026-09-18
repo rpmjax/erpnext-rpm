@@ -106,3 +106,6 @@ def install():
         d=frappe.get_doc('Client Script',name) if frappe.db.exists('Client Script',name) else frappe.new_doc('Client Script')
         d.update(dict(name=name,dt='RPM Daily Work Log',view='Form',enabled=1,script=root.joinpath('defaults.js').read_text(encoding='utf-8-sig')))
         d.save()
+
+    from rpm_worklog.targets import install as install_targets
+    install_targets()

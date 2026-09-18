@@ -22,3 +22,7 @@ doc_events['RPM Work Log Report'] = {'validate': 'rpm_worklog.reports.validate_c
 
 doc_events['System Settings'] = {'before_validate': 'rpm_worklog.timezone.validate_settings'}
 setup_wizard_stages = 'rpm_worklog.timezone.setup_stages'
+
+doc_events['RPM Work Target'] = {'validate': 'rpm_worklog.targets.validate', 'on_trash':'rpm_worklog.targets.prevent_delete'}
+has_permission = {'RPM Work Target':'rpm_worklog.targets.has_permission'}
+permission_query_conditions = {'RPM Work Target':'rpm_worklog.targets.permission_query'}

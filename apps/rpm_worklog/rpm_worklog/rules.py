@@ -29,3 +29,5 @@ def validate_data(doc):
     if total > 24:
         frappe.throw('單張總工時不可超過 24 小時')
     doc.total_hours = total
+    from rpm_worklog.targets import validate_entries
+    validate_entries(doc)
