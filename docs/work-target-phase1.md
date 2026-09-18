@@ -122,3 +122,16 @@ Manual acceptance (draft or new log, row pencil detail):
 5. Equal times or end earlier than start must prevent saving.
 6. Rows with time-derived hours linked to a target contribute to the same target hour totals.
 No production SSH update for this experimental branch yet.
+
+## Work log → target navigation (2026-09-18)
+User accepted optional start/end time behavior. Added 前往關聯目標 above the entry grid.
+- Distinct linked targets shown once each, with title and ID, refreshed on link changes/removal.
+- Native permission-filtered get_list supplies target labels; unauthorized targets are not linked.
+- Open target in a new tab to retain unsaved work; summary still counts saved rows only.
+- No target, empty authorized result, failed lookup and stale responses handled explicitly.
+- Existing employee target → own work-log navigation remains; manager form access is unchanged.
+Checks: image/migration PASS, JS syntax PASS, external authenticated lookup returns own targets
+and excludes them for the other employee. Manual browser acceptance pending.
+Acceptance: reload a draft log, link two rows to one target (one shortcut), link another target
+(two shortcuts), clear/remove rows (shortcuts update), click shortcut (new tab, edits retained).
+Production VM/master remain unchanged; no SSH update needed for this development increment.

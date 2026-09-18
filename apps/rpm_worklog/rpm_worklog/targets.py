@@ -185,6 +185,15 @@ def install():
         if field.fieldname in widths:
             field.columns = widths[field.fieldname]
     line.save()
+    parent = frappe.get_doc('DocType', 'RPM Daily Work Log')
+    navigation = parent.get('fields', {'fieldname':'target_navigation'})
+    navigation = navigation[0] if navigation else parent.append('fields',
+        dict(fieldname='target_navigation',label='關聯目標入口',fieldtype='HTML'))
+    parent.fields.remove(navigation)
+    parent.fields.insert(next(i for i,f in enumerate(parent.fields) if f.fieldname == 'lines'), navigation)
+    for index, field in enumerate(parent.fields, 1):
+        field.idx = index
+    parent.save()
     script_name = 'RPM Optional Work Target'
     script = frappe.get_doc('Client Script',script_name) if frappe.db.exists('Client Script',script_name) else frappe.new_doc('Client Script')
     script.update(dict(name=script_name,dt='RPM Daily Work Log',view='Form',enabled=1,
