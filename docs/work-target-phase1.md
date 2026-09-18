@@ -98,3 +98,27 @@ regression PASS; JS syntax PASS; external localhost:8086 login PASS.
 Manual acceptance: reload a draft/new log; select a target directly on row 1, ensure row 2 stays blank;
 select the same target on row 2, save, then refresh target summary and confirm both entries.
 If a custom grid layout hides the new field, use its gear to select 跨日目標.
+
+## Optional entry times (2026-09-18)
+User accepted inline target selection. Continued the previously discussed optional same-day time range.
+- Start/end default empty, optional, in row pencil detail immediately before Hours.
+- A complete valid interval overwrites Hours with duration at the existing hours precision.
+  Browser previews it; server computes again on save/validation, including forged manual-hour inputs.
+- Either endpoint absent: preserve existing hours and allow manual entry; hours remain required/positive.
+- Reject equal/reversed times, invalid clock values, and intervals that round to zero.
+- No timer, automatic current-time default, break deduction, cross-midnight calculation, or nested segments.
+- Existing records are not backfilled. Reviewed document edit locks remain unchanged.
+
+Checks: isolated migration PASS; persisted calculation/manual fallback/midnight/invalid ranges/
+document cap/review-lock tests PASS; target aggregation/review/security regression PASS;
+JS syntax PASS; external 8086 login/form access PASS; optional/no-default metadata verified.
+Browser acceptance pending. Production VM/master/baseline unchanged.
+
+Manual acceptance (draft or new log, row pencil detail):
+1. Without times, manually enter 1.25 hours and save; it remains 1.25.
+2. Start 09:00, end 10:30: hours becomes 1.5; saved total reflects it.
+3. Change end to 11:00: hours becomes 2.
+4. Clear one time: retain 2; manually change to 0.75 and save successfully.
+5. Equal times or end earlier than start must prevent saving.
+6. Rows with time-derived hours linked to a target contribute to the same target hour totals.
+No production SSH update for this experimental branch yet.

@@ -17,6 +17,8 @@ def validate_data(doc):
     validate_items(doc)
     total = 0
     for row in doc.lines:
+        from rpm_worklog.entry_time import apply as apply_entry_time
+        apply_entry_time(row)
         if row.result not in ['In Progress', 'Completed', 'Blocked']:
             frappe.throw('請選擇有效的工作結果')
         hours = frappe.utils.flt(row.hours)

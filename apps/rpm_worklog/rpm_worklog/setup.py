@@ -109,3 +109,5 @@ def install():
 
     from rpm_worklog.targets import install as install_targets
     install_targets()
+    from rpm_worklog.entry_time import install as install_entry_time
+    install_entry_time()
