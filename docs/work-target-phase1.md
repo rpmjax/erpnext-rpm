@@ -149,3 +149,14 @@ isolated migration PASS; authenticated external manager summary → detail API P
 Acceptance: manager login, open a direct employee target, click Work Log title (唯讀), verify
 all parent rows and 本目標 labels, close dialog to return. No edit or review buttons should appear.
 This increment awaits manual acceptance. Production VM/master unchanged.
+
+## Team viewer visual hierarchy (2026-09-18)
+User requested improved legibility of the long pipe-delimited summaries.
+Replaced each summary with a responsive native details card: employee identity, textual/color review
+badge, title, date/department/document ID, distinct hours and row count, explicit expand/collapse cue.
+Expanded table keeps horizontal overflow within its container; numeric cells align right.
+Review/history actions and backend authorization are unchanged. CSS scoped to the cards,
+text escaped, native keyboard details behavior/focus retained. Empty/truncated results explicit.
+Verification: JS syntax and installed Client Script checks PASS; isolated image/migration PASS.
+Manual visual acceptance pending: reload team viewer, query dates, inspect collapsed and expanded
+cards, narrow viewport, and ensure pending rows retain approve/return/history controls.

@@ -32,14 +32,52 @@ function load_team(frm, from_date, to_date) {
     frappe.call('rpm_worklog.queries.team_summary', {from_date, to_date}).then(r => {
         const data = r.message;
         const esc = value => frappe.utils.escape_html(String(value ?? ''));
-        let html = `<p>有效直屬員工 ${data.direct_report_count} 位；本次顯示 ${data.logs.length} 張。${data.truncated ? '超過 300 張，請縮小日期範圍。' : ''}</p>`;
+        const states = {'Draft':['草稿','draft'], 'Pending Review':['待審','pending'], 'Returned':['退回','returned'], 'Approved':['已核准','approved']};
+        const hours = value => Number(value || 0).toFixed(3);
+        let html = `<style>
+            .rpm-team-card {border:1px solid var(--border-color,#dfe3e8);border-radius:12px;margin:0 0 14px;background:var(--card-bg,#fff);overflow:hidden;color:var(--text-color,#243247)}
+            .rpm-team-card > summary {list-style:none;cursor:pointer;padding:16px;display:block}
+            .rpm-team-card > summary::-webkit-details-marker {display:none}
+            .rpm-team-card > summary:hover {background:var(--subtle-fg,#f6f8fa)}
+            .rpm-team-card > summary:focus-visible {outline:2px solid var(--primary,#1677d2);outline-offset:-3px}
+            .rpm-team-card .rpm-team-top {display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px}
+            .rpm-team-card .rpm-team-person {font-size:15px;font-weight:600;overflow-wrap:anywhere}
+            .rpm-team-card .rpm-team-title {font-size:16px;font-weight:600;line-height:1.5;margin-bottom:8px;overflow-wrap:anywhere}
+            .rpm-team-card .rpm-team-meta {display:flex;flex-wrap:wrap;gap:6px 16px;color:var(--text-muted,#667085);font-size:12px;overflow-wrap:anywhere}
+            .rpm-team-card .rpm-team-bottom {display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-top:12px}
+            .rpm-team-card .rpm-team-hours {font-size:18px;font-weight:600;font-variant-numeric:tabular-nums}
+            .rpm-team-card .rpm-team-hours small {font-size:12px;font-weight:400;color:var(--text-muted,#667085)}
+            .rpm-team-card .rpm-team-state {border-radius:16px;padding:3px 10px;font-size:12px;font-weight:600;white-space:nowrap}
+            .rpm-team-card .rpm-state-draft {background:#eef0f3;color:#465365}
+            .rpm-team-card .rpm-state-pending {background:#fff2cb;color:#795300}
+            .rpm-team-card .rpm-state-returned {background:#ffe6df;color:#983d22}
+            .rpm-team-card .rpm-state-approved {background:#def3e7;color:#22613f}
+            .rpm-team-card .rpm-team-toggle {font-size:12px;color:var(--primary,#1677d2)}
+            .rpm-team-card .rpm-team-close {display:none}
+            .rpm-team-card[open] .rpm-team-close {display:inline}
+            .rpm-team-card[open] .rpm-team-open {display:none}
+            .rpm-team-card .rpm-team-body {padding:16px;border-top:1px solid var(--border-color,#dfe3e8)}
+            .rpm-team-card table {margin-bottom:12px;min-width:540px}
+            .rpm-team-card th {white-space:nowrap;background:var(--subtle-fg,#f6f8fa)}
+            .rpm-team-card td {overflow-wrap:anywhere}
+            .rpm-team-card .rpm-number {text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+            .rpm-team-card .rpm-team-actions {display:flex;flex-wrap:wrap;gap:8px}
+            </style><p class="text-muted">${esc(from_date)} ～ ${esc(to_date)}<br>有效直屬員工 ${data.direct_report_count} 位 · 本次顯示 ${data.logs.length} 張</p>
+            ${data.truncated ? '<p class="alert alert-warning">結果超過 300 張，請縮小日期範圍。</p>' : ''}
+            ${!data.logs.length ? '<p class="alert alert-info">此日期範圍尚無直屬員工工作紀錄。</p>' : ''}`;
         for (const log of data.logs) {
-            html += `<details style="margin-bottom:16px"><summary>${esc(log.work_date)} | ${esc(log.employee_label || log.employee_name)} | ${esc(log.department)} | ${esc(log.title)} | ${esc(log.total_hours)} 小時 | ${esc(log.name)} | ${esc(__(log.review_state || 'Draft'))}</summary><div class="table-responsive"><table class="table table-bordered"><thead><tr><th>分類</th><th>工作內容／物料</th><th>數量</th><th>結果</th><th>工時</th><th>備註</th></tr></thead><tbody>`;
-            for (const row of log.lines) html += `<tr><td>${esc(row.activity_type)}</td><td>${esc(row.work_item || [row.item_code,row.item_name_snapshot].filter(Boolean).join(" | "))}</td><td>${esc(row.quantity)}</td><td>${esc(row.result)}</td><td>${esc(row.hours)}</td><td>${esc(row.note)}</td></tr>`;
-                        html += '</tbody></table></div>';
+            const [stateLabel, stateClass] = states[log.review_state || 'Draft'] || [log.review_state,'draft'];
+            html += `<details class="rpm-team-card"><summary>
+                <div class="rpm-team-top"><span class="rpm-team-person">${esc(log.employee_label || log.employee_name)}</span><span class="rpm-team-state rpm-state-${stateClass}">${esc(stateLabel)}</span></div>
+                <div class="rpm-team-title">${esc(log.title)}</div>
+                <div class="rpm-team-meta"><span>日期 ${esc(log.work_date)}</span><span>${esc(log.department)}</span><span>編號 ${esc(log.name)}</span></div>
+                <div class="rpm-team-bottom"><span class="rpm-team-hours">${hours(log.total_hours)} <small>小時 · ${log.lines.length} 個工作列</small></span><span class="rpm-team-toggle"><span class="rpm-team-open">展開工作明細 ▾</span><span class="rpm-team-close">收合明細 ▴</span></span></div>
+                </summary><div class="rpm-team-body"><div class="table-responsive"><table class="table table-bordered"><thead><tr><th scope="col">分類</th><th scope="col">工作內容／物料</th><th scope="col">數量</th><th scope="col">結果</th><th scope="col">工時</th><th scope="col">備註</th></tr></thead><tbody>`;
+            for (const row of log.lines) html += `<tr><td>${esc(row.activity_type)}</td><td>${esc(row.work_item || [row.item_code,row.item_name_snapshot].filter(Boolean).join(" | "))}</td><td class="rpm-number">${esc(row.quantity)}</td><td>${esc(__(row.result))}</td><td class="rpm-number">${hours(row.hours)}</td><td>${esc(row.note)}</td></tr>`;
+            html += '</tbody></table></div><div class="rpm-team-actions">';
             const index = data.logs.indexOf(log);
-            if (log.review_state === 'Pending Review') html += `<p><button class="btn btn-primary review-approve" data-index="${index}">${esc(__('Approve'))}</button> <button class="btn btn-default review-return" data-index="${index}">${esc(__('Return for Correction'))}</button></p>`;
-            html += `<button class="btn btn-default review-history" data-index="${index}">${esc(__('Review History'))}</button></details>`;
+            if (log.review_state === 'Pending Review') html += `<button class="btn btn-primary review-approve" data-index="${index}">${esc(__('Approve'))}</button> <button class="btn btn-default review-return" data-index="${index}">${esc(__('Return for Correction'))}</button>`;
+            html += `<button class="btn btn-default review-history" data-index="${index}">${esc(__('Review History'))}</button></div></div></details>`;
         }
                 target.html(html);
         const act = (log, action, reason='') => frappe.call({method:'rpm_worklog.review.transition',type:'POST',
