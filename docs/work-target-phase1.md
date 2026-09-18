@@ -160,3 +160,19 @@ text escaped, native keyboard details behavior/focus retained. Empty/truncated r
 Verification: JS syntax and installed Client Script checks PASS; isolated image/migration PASS.
 Manual visual acceptance pending: reload team viewer, query dates, inspect collapsed and expanded
 cards, narrow viewport, and ensure pending rows retain approve/return/history controls.
+
+## Acceptance update and next-stage gate
+User confirmed the manager read-only detail and requested continued development after the card-style update.
+The linked-target, optional-time and navigation increments are manually accepted as recorded above.
+No claim is made that production VM/master has been updated.
+
+Before quantity progress code, confirm whether the first scope is personal/single-process/single-unit,
+shared multi-process production, or release preparation of the current version.
+Existing quantity fields have no enforced measurement unit or process. Do not retroactively treat
+existing linked quantities as comparable or re-enable the previously disabled unit feature implicitly.
+
+## Release preparation decision (2026-09-18)
+User selected deferring quantity progress and preparing the current version for VM update.
+The earlier notes about master being unchanged describe development at that time; release instructions
+and migration evidence now live in vm-update-work-target-2026-09-18.md.
+The VM itself is still operated by the user. Development test passwords/data are never shipped.

@@ -171,3 +171,8 @@ Bench execute 的 --kwargs 使用 Python literal；舊腳本 JSON false/true 造
 ## 管理介面開通
 
 更新含開通管理功能的 App 後，System Manager 可使用 [工作紀錄開通管理](worklog-access-management.md) 單筆／批次開通，無須逐位 SSH enroll。既有 SSH 指令保留並共用相同權限衝突檢查。
+
+## 2026-09-18 既有 VM 更新
+
+已建立公司與員工的 VM，請依 [跨日目標版本更新步驟](vm-update-work-target-2026-09-18.md) 更新。
+沿用既有資料與帳號，使用 build + update；不要重新 configure/init。
