@@ -93,6 +93,51 @@ def validate_entries(doc, method=None):
             frappe.throw('Choose an open target; closed or archived links are retained only on existing entries')
 
 
+@frappe.whitelist()
+def summary(name, offset=0):
+    """Saved entry hours only; totals cover all matches, independently of paging."""
+    from rpm_worklog.scope import log_scope
+    from rpm_worklog.identity import label, FIELDS
+    target = frappe.get_doc(DT, name)
+    target.check_permission('read')
+    if not has_permission(target, permission_type='read'):
+        frappe.throw('Not permitted', frappe.PermissionError)
+    if not str(offset).isdigit() or int(offset) > 1000000:
+        frappe.throw('Invalid page offset')
+    offset = int(offset)
+    scope = 'Self' if target.owner == frappe.session.user else 'Team'
+    where, params = log_scope(scope)
+    where += ['l.work_target=%(target)s', 'p.owner=%(owner)s', 'p.employee=%(employee)s']
+    params.update(target=name, owner=target.owner, employee=target.employee, offset=offset)
+    source = """FROM `tabRPM Work Log Line` l
+        JOIN `tabRPM Daily Work Log` p ON p.name=l.parent
+        JOIN `tabEmployee` e ON e.name=p.employee
+        WHERE l.parenttype='RPM Daily Work Log' AND l.parentfield='lines' AND """ + ' AND '.join(where)
+    state = "COALESCE(NULLIF(p.review_state,''),'Draft')"
+    groups = frappe.db.sql(f"""SELECT {state} AS review_state, COUNT(*) AS entry_count,
+        COUNT(DISTINCT p.name) AS log_count, COALESCE(SUM(l.hours),0) AS hours
+        {source} GROUP BY {state}""", params, as_dict=True)
+    totals = {s:dict(hours=0,entry_count=0,log_count=0)
+              for s in ('Draft','Pending Review','Returned','Approved','Other')}
+    for group in groups:
+        bucket = totals.get(group.review_state, totals['Other'])
+        for key in ('hours','entry_count','log_count'):
+            bucket[key] += group[key]
+    rows = frappe.db.sql(f"""SELECT p.name AS work_log, p.title, p.work_date,
+        {state} AS review_state, l.idx AS entry_index, l.activity_type, l.work_item,
+        l.hours, l.result FROM `tabRPM Work Log Line` l
+        JOIN `tabRPM Daily Work Log` p ON p.name=l.parent
+        JOIN `tabEmployee` e ON e.name=p.employee
+        WHERE l.parenttype='RPM Daily Work Log' AND l.parentfield='lines' AND {' AND '.join(where)}
+        ORDER BY p.work_date DESC, p.name ASC, l.idx ASC, l.name ASC
+        LIMIT 50 OFFSET %(offset)s""", params, as_dict=True)
+    return dict(totals=totals, total_hours=sum(t['hours'] for t in totals.values()),
+        entry_count=sum(t['entry_count'] for t in totals.values()),
+        log_count=sum(t['log_count'] for t in totals.values()),
+        employee_label=label(frappe.db.get_value('Employee',target.employee,FIELDS,as_dict=True)),
+        rows=rows, offset=offset, page_size=50, can_open_log=(scope == 'Self'))
+
+
 def install():
     from pathlib import Path
     if not frappe.db.exists('DocType', DT):
@@ -112,6 +157,10 @@ def install():
                 dict(role='RPM Work Log Manager Pilot',read=1,select=1,write=0,create=0,delete=0),
             ])).insert()
     definition = frappe.get_doc('DocType', DT)
+    for field in [dict(fieldname='work_summary_section',label='關聯工作與工時',fieldtype='Section Break'),
+                  dict(fieldname='work_summary',label='關聯工作與工時',fieldtype='HTML')]:
+        if not definition.get('fields', {'fieldname':field['fieldname']}):
+            definition.append('fields',field)
     for perm in definition.permissions:
         for action in ('delete','share','export','import','submit','cancel','amend'):
             perm.set(action, 0)
@@ -127,6 +176,11 @@ def install():
     script = frappe.get_doc('Client Script',script_name) if frappe.db.exists('Client Script',script_name) else frappe.new_doc('Client Script')
     script.update(dict(name=script_name,dt='RPM Daily Work Log',view='Form',enabled=1,
         script=(Path(__file__).parent / 'public/js/targets.js').read_text(encoding='utf-8')))
+    script.save()
+    summary_script = 'RPM Work Target Summary'
+    script = frappe.get_doc('Client Script',summary_script) if frappe.db.exists('Client Script',summary_script) else frappe.new_doc('Client Script')
+    script.update(dict(name=summary_script,dt=DT,view='Form',enabled=1,
+        script=(Path(__file__).parent / 'public/js/target_summary.js').read_text(encoding='utf-8')))
     script.save()
     for sidebar in ('我的工作紀錄', '直屬員工工作紀錄'):
         if frappe.db.exists('Workspace Sidebar', sidebar):

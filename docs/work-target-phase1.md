@@ -46,3 +46,39 @@ Browser interaction remains for user acceptance. This increment has NOT been man
 7. Owner sets target Archived: existing log link remains; new picker no longer offers it.
 
 No SSH update to production for this experimental increment. Keep VM at master baseline.
+
+## Target linked-work summary (2026-09-18)
+
+Implemented in the target form under 關聯工作與工時:
+- Read-only, saved data across all dates; refresh button does not save the target.
+- Total hours, approved hours, not-yet-approved hours; Draft/Pending Review/Returned/Approved breakdown.
+- Entry-level detail: date, work log/row, activity, work content, result, hours, review state.
+- Only matching child rows are summed, never the parent total_hours. Cancelled parents excluded.
+- Fifty rows per page; aggregate totals cover all matches. Archived targets retain their history.
+- Target permission plus common live Self/Team predicates; target owner/employee must match the source log.
+- Employee may open own log from detail; managers read the detail here without an inaccessible form link.
+- No completion percentage, quantity sums or automatic target closing.
+
+### Verification
+Target summary rollback tests PASS: mixed linked/unlinked rows, actual submit/return/approve
+rebucketing, 58 rows across two pages with unchanged full totals, cancelled/cross-owner
+fixtures excluded, archive retained, invalid pagination and removed-manager/disabled-user/Guest denied.
+Existing target regression PASS. JS syntax PASS. Migration and metadata checks PASS.
+External 8086 HTTP login/list/summary PASS for employee and manager with existing targets; Guest denied.
+Manual acceptance of this summary increment remains pending.
+
+### Acceptance with predictable totals
+Use employee j250301@outlook.com and a NEW target named 驗收－跨日工時 (to isolate existing data).
+1. Create a draft work log with target-linked rows 1.25h and 0.75h, plus an unrelated row 7h.
+2. Create another date's work log with one target-linked row 3h. Save both logs.
+3. Open target, scroll to 關聯工作與工時: 2 logs, 3 linked rows, total 5h, Draft 5h, Approved 0h.
+   The unrelated 7h must not be included.
+4. Submit the second log (whole document). Refresh target summary: Draft 2h, Pending Review 3h, total 5h.
+5. As manager t870602rpm@outlook.com, approve that log in the team viewer. Refresh target:
+   Approved 3h, not-yet-approved 2h, total 5h. Manager sees summary but cannot edit the target.
+6. Optionally test return before approval: 3h moves from Pending Review to Returned, total remains 5h.
+7. A newly created target without linked saved rows shows an empty explanation and zero totals.
+8. Target status remains manually controlled; hours do not imply completion.
+
+Refresh the browser after deployment to load the new Client Script. Use local acceptance credentials;
+production credentials are not synchronized. Production VM update remains deferred on this branch.
