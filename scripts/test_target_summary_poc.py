@@ -44,6 +44,9 @@ try:
     assert data['total_hours'] == 14 and data['log_count'] == 4 and data['entry_count'] == 5
     assert {s:v['hours'] for s,v in data['totals'].items()} == {'Draft':2,'Pending Review':3,'Returned':4,'Approved':5,'Other':0}
     assert not data['can_open_log']
+    detail = targets.worklog_detail(t.name,draft.name)
+    assert len(detail.lines) == 3 and detail.total_hours == 11
+    assert sum(bool(row.linked_to_target) for row in detail.lines) == 2
     frappe.set_user(first)
     assert targets.summary(t.name)['can_open_log']
     # Actual review transition must rebucket, never add a second copy of hours.
@@ -58,8 +61,11 @@ try:
     other = make_log(review.employee_for(second),None,7)
     frappe.db.set_value('RPM Work Log Line',other.lines[0].name,'work_target',t.name)
     denied(lambda: targets.summary(t.name))
+    denied(lambda: targets.worklog_detail(t.name,draft.name))
     frappe.set_user(first)
     assert targets.summary(t.name)['total_hours'] == 14
+    denied(lambda: targets.worklog_detail(t.name,other.name))
+    denied(lambda: targets.worklog_detail(t.name,cancelled.name))
     # More than a page: aggregation must include rows not returned in this page.
     for idx in range(53):
         frappe.db.sql('''INSERT INTO `tabRPM Work Log Line`
@@ -82,12 +88,14 @@ try:
     frappe.db.set_value('Employee',emp,'reports_to',None)
     frappe.set_user(manager)
     denied(lambda: targets.summary(t.name))
+    denied(lambda: targets.worklog_detail(t.name,draft.name))
     frappe.set_user('Administrator')
     frappe.db.set_value('User',first,'enabled',0)
     frappe.set_user(first)
     denied(lambda: targets.summary(t.name))
     frappe.set_user('Guest')
     denied(lambda: targets.summary(t.name))
+    denied(lambda: targets.worklog_detail(t.name,draft.name))
     print('TARGET_SUMMARY_PASS: entry-grain totals, review rebucketing, full aggregation with paging, archive, cancellation and live access denial')
 finally:
     frappe.db.rollback()

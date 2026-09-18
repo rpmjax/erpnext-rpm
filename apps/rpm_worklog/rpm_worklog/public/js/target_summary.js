@@ -38,7 +38,7 @@ function load_target_summary(frm, offset) {
             html += '<div class="table-responsive"><table class="table table-bordered"><thead><tr><th>日期</th><th>工作紀錄／列</th><th>作業類型</th><th>工作內容</th><th>結果</th><th>工時</th><th>審核狀態</th></tr></thead><tbody>';
             for (const row of data.rows) {
                 const title = `${esc(row.title)}（${esc(row.work_log)}，第 ${esc(row.entry_index)} 列）`;
-                const log = data.can_open_log ? `<a href="/desk/rpm-daily-work-log/${encodeURIComponent(row.work_log)}">${title}</a>` : title;
+                const log = data.can_open_log ? `<a href="/desk/rpm-daily-work-log/${encodeURIComponent(row.work_log)}">${title}</a>` : `<button type="button" class="btn btn-link target-log-detail" data-log="${esc(row.work_log)}" style="white-space:normal;text-align:left">${title}（唯讀）</button>`;
                 html += `<tr><td>${esc(row.work_date)}</td><td>${log}</td><td>${esc(row.activity_type)}</td><td>${esc(row.work_item)}</td><td>${esc(__(row.result))}</td><td>${hours(row.hours)}</td><td>${esc(labels[row.review_state] || row.review_state)}</td></tr>`;
             }
             html += '</tbody></table></div>';
@@ -50,9 +50,31 @@ function load_target_summary(frm, offset) {
         wrapper.find('.target-reload').on('click', () => load_target_summary(frm, 0));
         wrapper.find('.target-prev').on('click', () => load_target_summary(frm, Math.max(0, offset - 50)));
         wrapper.find('.target-next').on('click', () => load_target_summary(frm, offset + 50));
+        wrapper.find('.target-log-detail').on('click', function() { open_target_worklog(name, this.dataset.log); });
     }).catch(() => {
         if (!current()) return;
         wrapper.empty().append($('<p>').text('無法讀取工時，請確認權限或稍後重試。'));
         $('<button type="button" class="btn btn-default">').text('重試').on('click', () => load_target_summary(frm, 0)).appendTo(wrapper);
     });
+}
+
+function open_target_worklog(name, work_log) {
+    const dialog = new frappe.ui.Dialog({title:'工作紀錄（唯讀）',size:'extra-large',fields:[{fieldname:'detail',fieldtype:'HTML'}]});
+    const wrapper = dialog.fields_dict.detail.$wrapper;
+    wrapper.text('讀取中…');
+    dialog.show();
+    frappe.call('rpm_worklog.targets.worklog_detail', {name, work_log}).then(({message: data}) => {
+        const esc = value => frappe.utils.escape_html(String(value ?? ''));
+        const hours = value => Number(value || 0).toFixed(3);
+        const states = {'Draft':'草稿','Pending Review':'待審','Returned':'退回','Approved':'已核准'};
+        let html = `<p><strong>${esc(data.title)}</strong>（${esc(data.name)}）</p>
+            <p>${esc(data.employee_label)}｜${esc(data.work_date)}｜${esc(states[data.review_state] || data.review_state)}</p>
+            <p>整張紀錄：${hours(data.total_hours)} 小時。下表包含所有工作列，只有標示「本目標」的列計入剛才的目標彙整。</p>`;
+        if (data.return_reason) html += `<p>退回原因：${esc(data.return_reason)}</p>`;
+        html += '<div class="table-responsive"><table class="table table-bordered"><thead><tr><th>列</th><th>關聯</th><th>作業類型</th><th>工作內容</th><th>數量</th><th>結果</th><th>開始／結束</th><th>工時</th><th>備註</th></tr></thead><tbody>';
+        for (const row of data.lines) {
+            html += `<tr><td>${esc(row.idx)}</td><td>${row.linked_to_target ? '本目標' : '其他工作列'}</td><td>${esc(row.activity_type)}</td><td>${esc(row.work_item)}</td><td>${esc(row.quantity)}</td><td>${esc(__(row.result))}</td><td>${esc(row.start_time)} / ${esc(row.end_time)}</td><td>${hours(row.hours)}</td><td>${esc(row.note)}</td></tr>`;
+        }
+        wrapper.html(html + '</tbody></table></div><p class="text-muted">此處僅供檢視；審核請使用「直屬員工工作紀錄」。關閉此視窗即可返回目標。</p>');
+    }).catch(() => wrapper.text('無法讀取，關聯或權限可能已變動；請關閉視窗並重新整理目標頁。'));
 }

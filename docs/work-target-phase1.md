@@ -135,3 +135,17 @@ and excludes them for the other employee. Manual browser acceptance pending.
 Acceptance: reload a draft log, link two rows to one target (one shortcut), link another target
 (two shortcuts), clear/remove rows (shortcuts update), click shortcut (new tab, edits retained).
 Production VM/master remain unchanged; no SSH update needed for this development increment.
+
+## Manager read-only log detail (2026-09-18)
+User accepted work-log → target shortcuts. Manager target-summary rows now open a read-only dialog
+with the full parent log, its current review state, return reason, times and work entries.
+Rows linked to the current target are labelled 本目標; other rows are clearly distinguished.
+The full log total is explicitly separate from target-linked hours. No save/review controls added.
+Employee links to their own editable forms remain unchanged.
+API rechecks target permission, common live scope, owner/employee consistency, cancellation and
+actual target linkage on every request; it returns only selected display fields, without mutations.
+Checks: target-summary regression including full-detail access/denial PASS; JS syntax PASS;
+isolated migration PASS; authenticated external manager summary → detail API PASS.
+Acceptance: manager login, open a direct employee target, click Work Log title (唯讀), verify
+all parent rows and 本目標 labels, close dialog to return. No edit or review buttons should appear.
+This increment awaits manual acceptance. Production VM/master unchanged.

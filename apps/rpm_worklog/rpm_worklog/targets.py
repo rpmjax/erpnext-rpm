@@ -138,6 +138,39 @@ def summary(name, offset=0):
         rows=rows, offset=offset, page_size=50, can_open_log=(scope == 'Self'))
 
 
+@frappe.whitelist()
+def worklog_detail(name, work_log):
+    """Contextual read-only view; independently recheck live access on every click."""
+    from rpm_worklog.scope import log_scope
+    from rpm_worklog.identity import label, FIELDS
+    target = frappe.get_doc(DT, name)
+    target.check_permission('read')
+    if not has_permission(target, permission_type='read'):
+        frappe.throw('Not permitted', frappe.PermissionError)
+    where, params = log_scope('Self' if target.owner == frappe.session.user else 'Team')
+    params.update(target=name, log=work_log, owner=target.owner, employee=target.employee)
+    where += ['p.name=%(log)s', 'p.owner=%(owner)s', 'p.employee=%(employee)s',
+              """EXISTS (SELECT 1 FROM `tabRPM Work Log Line` l WHERE l.parent=p.name
+                  AND l.parenttype='RPM Daily Work Log' AND l.parentfield='lines'
+                  AND l.work_target=%(target)s)"""]
+    rows = frappe.db.sql('''SELECT p.name,p.title,p.work_date,p.total_hours,p.review_state,p.return_reason
+        FROM `tabRPM Daily Work Log` p JOIN `tabEmployee` e ON e.name=p.employee WHERE '''
+        + ' AND '.join(where), params, as_dict=True)
+    if not rows:
+        frappe.throw('Work log is unavailable in this target', frappe.PermissionError)
+    result = rows[0]
+    result.employee_label = label(frappe.db.get_value('Employee',target.employee,FIELDS,as_dict=True))
+    result.lines = frappe.get_all('RPM Work Log Line',
+        filters={'parent':work_log,'parenttype':'RPM Daily Work Log','parentfield':'lines'},
+        fields=['idx','activity_type','work_item','quantity','result','hours','note','start_time','end_time','work_target'],
+        order_by='idx',limit_page_length=0)
+    for row in result.lines:
+        row.linked_to_target = row.pop('work_target') == name
+        for field in ('start_time','end_time'):
+            row[field] = str(row[field]) if row[field] is not None else ''
+    return result
+
+
 def install():
     from pathlib import Path
     if not frappe.db.exists('DocType', DT):
