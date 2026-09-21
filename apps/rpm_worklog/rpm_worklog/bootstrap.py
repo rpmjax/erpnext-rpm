@@ -50,6 +50,16 @@ def install_navigation():
             frappe.get_doc(dict(doctype='Workspace Sidebar',title=label,standard=0,header_icon='clipboard',
                 items=[dict(type='Link',label=label,link_type='DocType',link_to=target),
                        dict(type='Link',label='工作紀錄報表',link_type='DocType',link_to='RPM Work Log Analytics')])).insert()
+        sidebar = frappe.get_doc('Workspace Sidebar', label)
+        legacy = {'My Work Logs', 'Team Work Logs'}
+        remaining = [item for item in sidebar.items if item.link_to not in legacy | {target}]
+        sidebar.set('items', [])
+        sidebar.append('items', dict(type='Link', label=label, link_type='DocType', link_to=target))
+        for item in remaining:
+            sidebar.append('items', item)
+        if not any(item.link_to == 'RPM Work Log Analytics' for item in sidebar.items):
+            sidebar.append('items', dict(type='Link', label='工作紀錄報表', link_type='DocType', link_to='RPM Work Log Analytics'))
+        sidebar.save()
         if not frappe.db.exists('Desktop Icon',label):
             frappe.get_doc(dict(doctype='Desktop Icon',label=label,standard=0,icon_type='Link',
                 link_type='Workspace Sidebar',link_to=label,icon='clipboard',bg_color=color,hidden=0,
