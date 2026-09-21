@@ -1,7 +1,7 @@
 """Rollback-only in-app notification routing, transaction and no-email checks."""
 import frappe
 from unittest.mock import patch
-from rpm_worklog import review, notifications
+from rpm_worklog import review, notifications, queries
 assert frappe.local.site == 'frontend' and frappe.conf.get('rpm_worklog_model_poc')
 
 
@@ -30,6 +30,14 @@ try:
         notifications.notify_review(doc,event,manager)
         assert len(logs(doc.name))==1
         frappe.set_user(manager)
+        detail = queries.team_summary(work_log=doc.name, from_date='2000-01-01', to_date='2000-01-01')
+        assert len(detail['logs']) == 1 and detail['logs'][0].name == doc.name
+        assert detail['logs'][0].review_state == 'Pending Review' and len(detail['logs'][0].lines) == 1
+        assert not queries.team_summary(work_log='missing-log')['logs']
+        original_manager = frappe.db.get_value('Employee', doc.employee, 'reports_to')
+        frappe.db.set_value('Employee', doc.employee, 'reports_to', None)
+        assert not queries.team_summary(work_log=doc.name)['logs']
+        frappe.db.set_value('Employee', doc.employee, 'reports_to', original_manager)
         doc.reload()
         review.transition(doc.name,'return',str(doc.modified),'correct this')
         assert logs(doc.name)[-1].for_user==employee

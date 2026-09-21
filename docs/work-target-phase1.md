@@ -207,3 +207,7 @@ resubmit/approve and check subsequent notifications. Check no new notification m
 If notifications are disabled in account settings, no new notification is expected. Reload after deployment.
 Actual two-browser live bell/route behavior awaits user acceptance; tests left no synthetic notifications.
 VM/master not updated by this increment.
+
+### 通知直接明細（2026-09-21）
+主管通知以 work_log 編號直接查詢並展開單張唯讀明細，支援 URL 與 Frappe route_options；不受日期及 300 筆列表限制。待審保留核准／退回，操作後重讀該張紀錄。讀取與審核均使用即時直屬權限。
+驗收：重新載入 8086，主管點送審通知，應直接看到該張完整工作列及審核按鈕；退回或核准後狀態更新。日期查詢仍可查看其他紀錄。自動測試涵蓋精確查詢、失效直屬關係、通知交易與前端兩種路由參數。VM 尚未更新。

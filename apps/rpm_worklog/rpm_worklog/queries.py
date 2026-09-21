@@ -23,17 +23,23 @@ def daily_summary(work_date):
 
 
 @frappe.whitelist()
-def team_summary(from_date,to_date):
+def team_summary(from_date=None,to_date=None,work_log=None):
     filters = employee_filters('Team')
     manager=employee_for(frappe.session.user)
-    start,end=getdate(from_date),getdate(to_date)
-    if not from_date or not to_date or not 0 <= (end-start).days <= 31:
-        frappe.throw('Select a date range of at most 32 days')
+    if not work_log:
+        start,end=getdate(from_date),getdate(to_date)
+        if not from_date or not to_date or not 0 <= (end-start).days <= 31:
+            frappe.throw('Select a date range of at most 32 days')
     employees=frappe.get_all('Employee',filters=filters,fields=IDENTITY_FIELDS,limit_page_length=0)
     labels = {e.name:label(e) for e in employees}
     where, params = log_scope('Team')
-    params.update(start=start,end=end)
-    rows=frappe.db.sql('SELECT p.name,p.work_date,p.title,p.employee,p.employee_name,p.department,p.total_hours,p.review_state,p.modified FROM `tabRPM Daily Work Log` p INNER JOIN tabEmployee e ON e.name=p.employee WHERE '+ ' AND '.join(where) +' AND p.work_date BETWEEN %(start)s AND %(end)s ORDER BY p.work_date DESC,p.name LIMIT 301',params,as_dict=True)
+    if work_log:
+        where.append('p.name=%(work_log)s')
+        params['work_log'] = work_log
+    else:
+        where.append('p.work_date BETWEEN %(start)s AND %(end)s')
+        params.update(start=start,end=end)
+    rows=frappe.db.sql('SELECT p.name,p.work_date,p.title,p.employee,p.employee_name,p.department,p.total_hours,p.review_state,p.modified FROM `tabRPM Daily Work Log` p INNER JOIN tabEmployee e ON e.name=p.employee WHERE '+ ' AND '.join(where) +' ORDER BY p.work_date DESC,p.name LIMIT 301',params,as_dict=True)
     for row in rows[:300]:
         row.employee_label = labels.get(row.employee, '未填姓名 | 未填工號')
         row.lines=frappe.get_all('RPM Work Log Line',filters={'parent':row.name,'parenttype':'RPM Daily Work Log','parentfield':'lines'},

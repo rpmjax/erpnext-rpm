@@ -16,25 +16,28 @@ frappe.ui.form.on('RPM Team Work Log Viewer', {
             <button type="button" class="btn btn-primary team-query" style="margin:12px 0">查詢</button>
             <div class="team-results" aria-live="polite"></div>`);
         const params = new URLSearchParams(window.location.search);
-        const notifiedDate = params.get('work_date');
+        const options = frappe.route_options || {};
+        const notifiedDate = params.get('work_date') || options.work_date;
         const validDate = /^\d{4}-\d{2}-\d{2}$/.test(notifiedDate || '');
-        frm.rpm_notification_log = validDate ? params.get('work_log') : null;
+        frm.rpm_notification_log = params.get('work_log') || options.work_log || null;
         wrapper.find('.team-from, .team-to').val(validDate ? notifiedDate : frappe.datetime.get_today());
         const query = () => {
             const from = wrapper.find('.team-from').val();
             const to = wrapper.find('.team-to').val();
             if (!from || !to) { frappe.msgprint('請填寫開始與結束日期'); return; }
+            frm.rpm_notification_log = null;
             load_team(frm, from, to);
         };
         wrapper.find('.team-query').on('click', query);
         frm.page.set_primary_action('查詢', query);
-        if (validDate) query();
+        if (frm.rpm_notification_log) load_team(frm, null, null, frm.rpm_notification_log);
+        else if (validDate) query();
     }
 });
-function load_team(frm, from_date, to_date) {
+function load_team(frm, from_date, to_date, work_log=null) {
     const target = frm.fields_dict.results.$wrapper.find('.team-results');
     target.empty().text('查詢中…');
-    frappe.call('rpm_worklog.queries.team_summary', {from_date, to_date}).then(r => {
+    frappe.call('rpm_worklog.queries.team_summary', {from_date, to_date, work_log}).then(r => {
         const data = r.message;
         const esc = value => frappe.utils.escape_html(String(value ?? ''));
         const states = {'Draft':['草稿','draft'], 'Pending Review':['待審','pending'], 'Returned':['退回','returned'], 'Approved':['已核准','approved']};
@@ -67,9 +70,9 @@ function load_team(frm, from_date, to_date) {
             .rpm-team-card td {overflow-wrap:anywhere}
             .rpm-team-card .rpm-number {text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
             .rpm-team-card .rpm-team-actions {display:flex;flex-wrap:wrap;gap:8px}
-            </style><p class="text-muted">${esc(from_date)} ～ ${esc(to_date)}<br>有效直屬員工 ${data.direct_report_count} 位 · 本次顯示 ${data.logs.length} 張</p>
+            </style><p class="text-muted">${work_log ? '通知工作紀錄 · 唯讀明細' : `${esc(from_date)} ～ ${esc(to_date)}`}<br>有效直屬員工 ${data.direct_report_count} 位 · 本次顯示 ${data.logs.length} 張</p>
             ${data.truncated ? '<p class="alert alert-warning">結果超過 300 張，請縮小日期範圍。</p>' : ''}
-            ${!data.logs.length ? '<p class="alert alert-info">此日期範圍尚無直屬員工工作紀錄。</p>' : ''}`;
+            ${!data.logs.length ? '<p class="alert alert-info">沒有可顯示的紀錄；紀錄可能已刪除或不在目前直屬權限範圍內。</p>' : ''}`;
         for (const log of data.logs) {
             const [stateLabel, stateClass] = states[log.review_state || 'Draft'] || [log.review_state,'draft'];
             html += `<details class="rpm-team-card" data-log="${esc(log.name)}"><summary>
@@ -91,7 +94,7 @@ function load_team(frm, from_date, to_date) {
             else target.prepend($('<p class="alert alert-info">').text('通知所指紀錄不在目前查詢結果中，可能已變更或不再屬於你的直屬範圍。'));
         }
         const act = (log, action, reason='') => frappe.call({method:'rpm_worklog.review.transition',type:'POST',
-            args:{name:log.name,action,reason,expected_modified:log.modified}}).then(() => load_team(frm,from_date,to_date));
+            args:{name:log.name,action,reason,expected_modified:log.modified}}).then(() => load_team(frm,from_date,to_date,work_log));
         target.find('.review-approve').on('click', function() {
             const log=data.logs[Number(this.dataset.index)];
             frappe.confirm(__('Approve this work log?'), () => act(log,'approve'));
