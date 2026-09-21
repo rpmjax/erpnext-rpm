@@ -211,3 +211,6 @@ VM/master not updated by this increment.
 ### 通知直接明細（2026-09-21）
 主管通知以 work_log 編號直接查詢並展開單張唯讀明細，支援 URL 與 Frappe route_options；不受日期及 300 筆列表限制。待審保留核准／退回，操作後重讀該張紀錄。讀取與審核均使用即時直屬權限。
 驗收：重新載入 8086，主管點送審通知，應直接看到該張完整工作列及審核按鈕；退回或核准後狀態更新。日期查詢仍可查看其他紀錄。自動測試涵蓋精確查詢、失效直屬關係、通知交易與前端兩種路由參數。VM 尚未更新。
+
+### 通知導向部署補正（2026-09-21）
+實測發現 8086 的 RPM Team Viewer Client Script 仍為舊版：先前只重建容器、未跑 migrate。已補跑 migration 同步資料庫 Client Script。新增 scripts/test_team_viewer_deployment.py 檢查啟用狀態、資料庫 script 與映像 source 完全一致；此檢查須在部署後執行。先前原始碼單元測試不能取代部署檢查。瀏覽器端點擊通知仍待使用者重新驗收。
