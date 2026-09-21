@@ -58,6 +58,7 @@ def transition(name, action, expected_modified, reason=None):
     if get_datetime(old.modified) != get_datetime(expected_modified):
         frappe.throw(_('Record changed; reload before continuing'), frappe.TimestampMismatchError)
     state = old.review_state or 'Draft'
+    manager_user = None
     if action == 'submit':
         doc.check_permission('write')
         if doc.employee != employee_for(frappe.session.user) or state not in ('Draft','Returned'):
@@ -83,11 +84,13 @@ def transition(name, action, expected_modified, reason=None):
     frappe.db.set_value(DT, name, {'review_state':target,'return_reason':reason})
     token = _EVENT_WRITE.set(True)
     try:
-        frappe.get_doc(dict(doctype='RPM Work Log Review Event', work_log=name,
+        event = frappe.get_doc(dict(doctype='RPM Work Log Review Event', work_log=name,
             from_state=state,to_state=target,action=action,actor=frappe.session.user,
             event_time=frappe.utils.now_datetime(),reason=reason)).insert(ignore_permissions=True)
     finally:
         _EVENT_WRITE.reset(token)
+    from rpm_worklog.notifications import notify_review
+    notify_review(doc, event, manager_user)
     return {'name':name,'review_state':target}
 
 @frappe.whitelist()

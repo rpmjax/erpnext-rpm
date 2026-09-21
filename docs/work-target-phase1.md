@@ -188,3 +188,22 @@ reference denial; existing target lifecycle/read-scope cases retained. No concur
 Acceptance on 8086: create a disposable unused target as employee; page menu → Delete should succeed;
 attempt on a linked target should fail with archive guidance. Refresh after migration for new permissions.
 This patch remains on codex/work-target-phase1 pending acceptance; master/VM not updated.
+
+## In-app review notifications (2026-09-21)
+Implemented notification stage on development branch only. Translation backlog remains deferred.
+- Native Notification Log + native after-commit notification event, no worker needed for log creation.
+- Submit/resubmit routes to current configured manager; return/approve routes to owner.
+- One deterministic notification ID per review event. Bulk duplicate/already-pending rows do not notify again.
+- Notifications participate in the review transaction. Respect user notification opt-out and disabled type.
+- Registered RPM Work Log Review type explicitly skips email via framework hook, regardless of mail settings.
+- Persistent content contains only log ID/date/action; details are read through current permissions.
+- Manager link opens existing team viewer with date and expands requested record; employee link opens own log.
+- No backfill of historical transitions. Draft edits are quiet. General cross-page live refresh still pending.
+Checks: isolated migration and JS syntax PASS; rollback notification tests cover recipients, resubmission,
+bulk duplicates, rollback, isolation and prohibited email; external manager notification feed HTTP PASS.
+Manual acceptance: use separate browser sessions for employee/manager; submit a fresh draft, manager
+checks bell and clicks notification; return with reason, employee checks bell and opens own log;
+resubmit/approve and check subsequent notifications. Check no new notification merely from draft save.
+If notifications are disabled in account settings, no new notification is expected. Reload after deployment.
+Actual two-browser live bell/route behavior awaits user acceptance; tests left no synthetic notifications.
+VM/master not updated by this increment.

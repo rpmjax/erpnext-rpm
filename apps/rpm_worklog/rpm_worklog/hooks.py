@@ -4,6 +4,7 @@ app_publisher = "RPM"
 app_description = "Employee work log review"
 app_email = ""
 app_license = "MIT"
+notification_skip_email_types = ['RPM Work Log Review']
 after_install = "rpm_worklog.setup.install"
 after_migrate = "rpm_worklog.setup.install"
 doc_events = {

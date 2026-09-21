@@ -111,3 +111,5 @@ def install():
     install_targets()
     from rpm_worklog.entry_time import install as install_entry_time
     install_entry_time()
+    from rpm_worklog.notifications import install as install_notifications
+    install_notifications()

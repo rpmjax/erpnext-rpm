@@ -15,7 +15,11 @@ frappe.ui.form.on('RPM Team Work Log Viewer', {
             </div>
             <button type="button" class="btn btn-primary team-query" style="margin:12px 0">查詢</button>
             <div class="team-results" aria-live="polite"></div>`);
-        wrapper.find('.team-from, .team-to').val(frappe.datetime.get_today());
+        const params = new URLSearchParams(window.location.search);
+        const notifiedDate = params.get('work_date');
+        const validDate = /^\d{4}-\d{2}-\d{2}$/.test(notifiedDate || '');
+        frm.rpm_notification_log = validDate ? params.get('work_log') : null;
+        wrapper.find('.team-from, .team-to').val(validDate ? notifiedDate : frappe.datetime.get_today());
         const query = () => {
             const from = wrapper.find('.team-from').val();
             const to = wrapper.find('.team-to').val();
@@ -24,6 +28,7 @@ frappe.ui.form.on('RPM Team Work Log Viewer', {
         };
         wrapper.find('.team-query').on('click', query);
         frm.page.set_primary_action('查詢', query);
+        if (validDate) query();
     }
 });
 function load_team(frm, from_date, to_date) {
@@ -67,7 +72,7 @@ function load_team(frm, from_date, to_date) {
             ${!data.logs.length ? '<p class="alert alert-info">此日期範圍尚無直屬員工工作紀錄。</p>' : ''}`;
         for (const log of data.logs) {
             const [stateLabel, stateClass] = states[log.review_state || 'Draft'] || [log.review_state,'draft'];
-            html += `<details class="rpm-team-card"><summary>
+            html += `<details class="rpm-team-card" data-log="${esc(log.name)}"><summary>
                 <div class="rpm-team-top"><span class="rpm-team-person">${esc(log.employee_label || log.employee_name)}</span><span class="rpm-team-state rpm-state-${stateClass}">${esc(stateLabel)}</span></div>
                 <div class="rpm-team-title">${esc(log.title)}</div>
                 <div class="rpm-team-meta"><span>日期 ${esc(log.work_date)}</span><span>${esc(log.department)}</span><span>編號 ${esc(log.name)}</span></div>
@@ -80,6 +85,11 @@ function load_team(frm, from_date, to_date) {
             html += `<button class="btn btn-default review-history" data-index="${index}">${esc(__('Review History'))}</button></div></div></details>`;
         }
                 target.html(html);
+        if (frm.rpm_notification_log) {
+            const selected = target.find('.rpm-team-card').filter(function() { return this.dataset.log === frm.rpm_notification_log; });
+            if (selected.length) selected.prop('open',true);
+            else target.prepend($('<p class="alert alert-info">').text('通知所指紀錄不在目前查詢結果中，可能已變更或不再屬於你的直屬範圍。'));
+        }
         const act = (log, action, reason='') => frappe.call({method:'rpm_worklog.review.transition',type:'POST',
             args:{name:log.name,action,reason,expected_modified:log.modified}}).then(() => load_team(frm,from_date,to_date));
         target.find('.review-approve').on('click', function() {
