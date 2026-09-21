@@ -26,6 +26,7 @@ try:
     first, second, manager = 'j250301@outlook.com','j220402rpm@outlook.com','t870602rpm@outlook.com'
     frappe.set_user(first)
     t = target()
+    unused = target('unused deletion test')
     emp = targets.employee_for(first)
     assert t.employee == emp and t.owner == first
     assert t.has_permission('write')
@@ -33,10 +34,12 @@ try:
     linked = log(emp,t.name)
     assert no_link.total_hours == linked.total_hours == 1
     frappe.set_user(second)
+    denied(lambda: frappe.delete_doc(targets.DT,unused.name))
     denied(lambda: frappe.get_doc(targets.DT,t.name).check_permission('read'))
     assert not frappe.get_list(targets.DT,filters={'name':t.name})
     denied(lambda: log(targets.employee_for(second),t.name))
     frappe.set_user(manager)
+    denied(lambda: frappe.delete_doc(targets.DT,unused.name))
     assert frappe.get_doc(targets.DT,t.name).has_permission('read')
     assert frappe.get_list(targets.DT,filters={'name':t.name})
     denied(lambda: frappe.get_doc(targets.DT,t.name).save())
@@ -47,6 +50,8 @@ try:
     denied(lambda: frappe.get_doc(targets.DT,t.name).check_permission('read'))
     assert not frappe.get_list(targets.DT,filters={'name':t.name})
     frappe.set_user(first)
+    frappe.delete_doc(targets.DT,unused.name)
+    assert not frappe.db.exists(targets.DT,unused.name)
     t = frappe.get_doc(targets.DT,t.name)
     t.employee = targets.employee_for(second)
     denied(t.save)
@@ -61,6 +66,8 @@ try:
     linked.title='retained historical target'
     linked.save()
     denied(lambda: log(emp,t.name))
+    denied(lambda: frappe.delete_doc(targets.DT,t.name))
+    frappe.db.set_value('RPM Daily Work Log',linked.name,'docstatus',2)
     denied(lambda: frappe.delete_doc(targets.DT,t.name))
     frappe.set_user('Guest')
     denied(lambda: frappe.get_doc(targets.DT,t.name).check_permission('read'))

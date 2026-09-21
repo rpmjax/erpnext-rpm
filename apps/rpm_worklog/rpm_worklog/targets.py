@@ -31,7 +31,7 @@ def has_permission(doc, user=None, ptype=None, permission_type=None):
         return bool('RPM Work Log Manager Pilot' in roles and doc.employee != employee
                     and frappe.db.exists('Employee', {'name':doc.employee, 'status':'Active',
                         'reports_to':employee, 'user_id':doc.owner}))
-    if permission_type in ('write',):
+    if permission_type in ('write', 'delete'):
         return own
     return False
 
@@ -75,7 +75,12 @@ def validate(doc, method=None):
 
 
 def prevent_delete(doc, method=None):
-    frappe.throw('Archive the target instead of deleting it, to preserve work-log history')
+    locked = frappe.db.sql('SELECT name,owner,employee FROM `tabRPM Work Target` WHERE name=%s FOR UPDATE', doc.name, as_dict=True)
+    if not locked or not has_permission(locked[0], permission_type='delete'):
+        frappe.throw('只有目標建立者可以刪除未關聯的目標', frappe.PermissionError)
+    references = frappe.db.sql('SELECT name FROM `tabRPM Work Log Line` WHERE work_target=%s LIMIT 1 FOR UPDATE', doc.name)
+    if references:
+        frappe.throw('此目標已有工作列關聯，不能刪除；請改用 Archived（封存）。')
 
 
 def validate_entries(doc, method=None):
@@ -83,6 +88,10 @@ def validate_entries(doc, method=None):
     if old is None and not doc.is_new():
         old = frappe.get_doc(doc.doctype, doc.name)
     previous = {r.name:r.get('work_target') for r in old.lines} if old else {}
+    # Serialize linking with deletion; acquire multiple target locks in stable order.
+    for name in sorted({r.get('work_target') for r in doc.lines or [] if r.get('work_target')}):
+        if not frappe.db.sql('SELECT name FROM `tabRPM Work Target` WHERE name=%s FOR UPDATE', name):
+            frappe.throw('關聯目標已不存在，請重新選取')
     for row in doc.lines or []:
         if not row.get('work_target'):
             continue
@@ -197,6 +206,8 @@ def install():
     for perm in definition.permissions:
         for action in ('delete','share','export','import','submit','cancel','amend'):
             perm.set(action, 0)
+        if perm.role == 'RPM Work Log Pilot':
+            perm.delete = 1
         if perm.role == 'RPM Work Log Manager Pilot':
             perm.write = perm.create = 0
     definition.save()

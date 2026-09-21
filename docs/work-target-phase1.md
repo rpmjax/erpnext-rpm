@@ -176,3 +176,15 @@ User selected deferring quantity progress and preparing the current version for 
 The earlier notes about master being unchanged describe development at that time; release instructions
 and migration evidence now live in vm-update-work-target-2026-09-18.md.
 The VM itself is still operated by the user. Development test passwords/data are never shipped.
+
+## Unreferenced target deletion (2026-09-21)
+User approved the staged plan: deletion first for acceptance, then notifications/live refresh.
+Only an enabled, active owning employee with the work-log employee role may delete an unreferenced
+target. Other employees/managers cannot delete. Any current work-line reference, including a
+cancelled parent, blocks deletion; archive instead. No user document was deleted by deployment.
+Target deletion and entry-link validation lock the target to serialize concurrent writes.
+Rollback regression PASS: owner unused deletion; other employee/manager denial; linked and cancelled
+reference denial; existing target lifecycle/read-scope cases retained. No concurrent load test claimed.
+Acceptance on 8086: create a disposable unused target as employee; page menu → Delete should succeed;
+attempt on a linked target should fail with archive guidance. Refresh after migration for new permissions.
+This patch remains on codex/work-target-phase1 pending acceptance; master/VM not updated.
