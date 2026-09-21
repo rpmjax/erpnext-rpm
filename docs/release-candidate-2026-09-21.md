@@ -29,3 +29,13 @@
 本輪不是新一輪九服務穩定性、瀏覽器登入、私人附件 HTTP 授權、負載或完整 DR 驗證。__Auth 相同證明密碼資料保留，不等於完成實際登入測試。發布前應固定候選映像身份，補九服務/HTTP驗收，並準備 VM 更新指示。不得直接讓 VM pull 開發分支當成已發布版本。
 
 可重用檢查：scripts/test_upgrade_preservation.py（硬性限定隔離站，before 會建立測試 fixture）；scripts/test_team_viewer_deployment.py。通知測試適配版存於 ignored .local/vm-release-check/notifications.py；migration log 位於同目錄 upgrade-20260921.log。不得提交備份/帳密/私人資料。
+
+## 發布補驗
+
+候選 app image 固定為 rpm-worklog-vm:61e9698-candidate，image ID sha256:063cc9b152c4ccd33be00d33117a7f3a39109375eb8987b1dcffefe95fbd4c08。此為已測 app 原始碼映像，後續提交只新增測試與文件；未宣稱此 image 在 61e9698 重新 build。
+
+HTTP 經隔離 Docker frontend 驗證：/login 200 且包含登入頁內容、/api/method/ping 回 pong、Guest 存取主管查詢被拒（401/403）。使用內部網路，未開公開埠。VM 操作者仍須驗證實際帳號登入與域名路徑。
+
+固定版本更新手冊：[VM 更新](vm-update-notifications-2026-09-21.md)。
+
+九服務至少 60 秒觀察通過：均 running、RestartCount=0、啟動時間不變，DB/backend healthy。驗證後停止隔離 project，保留 volumes。此為啟動穩定性，非負載或任務完成驗證。
