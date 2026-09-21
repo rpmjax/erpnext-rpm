@@ -176,3 +176,9 @@ Bench execute 的 --kwargs 使用 Python literal；舊腳本 JSON false/true 造
 
 已建立公司與員工的 VM，請依 [跨日目標版本更新步驟](vm-update-work-target-2026-09-18.md) 更新。
 沿用既有資料與帳號，使用 build + update；不要重新 configure/init。
+
+## 2026-09-21 第二主機驗證與 DR 狀態
+
+GCP CyberPanel VM 已由操作人完成 625514b3b806 空白站部署及 HTTPS login 驗證；詳見 [實測環境、CSF firewall 與代理紀錄](gcp-cyberpanel-deployment-2026-09-21.md)。CyberPanel 並非正式架構必要元件。
+
+既有局部 restore 演練不等於完整災難復原；目前缺口與最小驗證方案見 [DR validation](disaster-recovery-validation.md)。此 GCP 使用自訂 RPM_STATE_DIR，每次 SSH 操作需明確 export，勿誤用預設目錄。
