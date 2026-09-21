@@ -27,3 +27,5 @@ setup_wizard_stages = 'rpm_worklog.timezone.setup_stages'
 doc_events['RPM Work Target'] = {'validate': 'rpm_worklog.targets.validate', 'on_trash':'rpm_worklog.targets.prevent_delete'}
 has_permission = {'RPM Work Target':'rpm_worklog.targets.has_permission'}
 permission_query_conditions = {'RPM Work Target':'rpm_worklog.targets.permission_query'}
+
+app_include_js = ['/assets/rpm_worklog/js/sidebar.js']
