@@ -24,9 +24,16 @@ frappe.ui.form.on('RPM Daily Work Log', {
                     .rpm-desktop-work-grid .grid-empty,
                     .rpm-desktop-work-grid > .grid-footer {display:none!important}
                     .rpm-mobile-work-card {border:1px solid var(--border-color,#ddd);border-radius:10px;padding:14px;margin:10px 0;overflow-wrap:anywhere}
-                    .rpm-mobile-work-card dl {margin:10px 0}
+                    .rpm-desktop-work-grid > .control-label,
+                    .rpm-desktop-work-grid > .grid-description {display:none}
+                    .rpm-desktop-work-grid .form-grid {border:0;min-height:0;background:transparent}
+                    .rpm-desktop-work-grid .grid-row {border:0;min-height:0}
+                    .rpm-desktop-work-grid .grid-body {min-height:0}
+                    .rpm-mobile-work-card dl {margin:10px 0;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px 14px}
+                    .rpm-mobile-work-card .rpm-card-field {min-width:0}
+                    .rpm-mobile-work-card .rpm-card-wide {grid-column:1 / -1}
                     .rpm-mobile-work-card dt {font-size:12px;color:var(--text-muted)}
-                    .rpm-mobile-work-card dd {margin:2px 0 10px;white-space:pre-wrap}
+                    .rpm-mobile-work-card dd {margin:2px 0 0;white-space:pre-wrap}
                     .rpm-mobile-work-card button {min-height:44px}
                 }`).appendTo(document.head);
         }
@@ -44,7 +51,7 @@ function rpm_render_mobile_cards(frm) {
     for (const row of frm.doc.lines || []) {
         const card=$('<section class="rpm-mobile-work-card">').appendTo(area);
         const pairs=[['作業類型',row.activity_type],['工作內容／物料',row.work_item],['跨日目標',row.work_target],['完成數量',row.quantity],['結果',__(row.result || '')],['工時',row.hours],['備註',row.note]];
-        card.html(`<strong>第 ${esc(row.idx)} 筆工作</strong><dl>${pairs.map(([k,v])=>`<dt>${esc(k)}</dt><dd>${esc(v === undefined || v === null || v === '' ? '—' : v)}</dd>`).join('')}</dl>`);
+        card.html(`<strong>第 ${esc(row.idx)} 筆工作</strong><dl>${pairs.map(([k,v])=>`<div class="rpm-card-field ${['工作內容／物料','備註'].includes(k) ? 'rpm-card-wide' : ''}"><dt>${esc(k)}</dt><dd>${esc(v === undefined || v === null || v === '' ? '—' : v)}</dd></div>`).join('')}</dl>`);
         $('<button type="button" class="btn btn-default">').text(locked?'查看明細':'編輯工作').appendTo(card).on('click',()=> {
             frm.rpm_material_row=row.name;
             grid.grid_rows_by_docname[row.name]?.toggle_view(true);
