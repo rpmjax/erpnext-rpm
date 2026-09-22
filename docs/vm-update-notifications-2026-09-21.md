@@ -1,5 +1,7 @@
 # 通知與目標刪除版本：既有 VM 更新（2026-09-21）
 
+> 文件定位（2026-09-22）：下列為歷史需求／交付／驗證紀錄，當時狀態及命令不代表目前狀態。唯一現況見 [PROJECT_STATUS](PROJECT_STATUS.md)；更新 VM 只依 [操作程序](ssh-vm-deploy.md)。
+
 固定版本標籤：release/worklog-2026-09-21。適用已完成初始化的站台；不是 fresh init 或完整 DR。功能差異與隔離升級證據見 [候選驗證](release-candidate-2026-09-21.md)。GCP 資源有限，安排低流量維護窗口，逐條執行，失敗即停；不並行 build/update。
 
 ## Hyper-V：以 paskadmin 執行

@@ -1,5 +1,7 @@
 # rpm-erpnext VM 操作與搬移
 
+> 文件定位（2026-09-22）：下列為歷史需求／交付／驗證紀錄，當時狀態及命令不代表目前狀態。唯一現況見 [PROJECT_STATUS](PROJECT_STATUS.md)；更新 VM 只依 [操作程序](ssh-vm-deploy.md)。
+
 ## 2026-09-07 實機盤點
 
 | 項目 | 實測 |

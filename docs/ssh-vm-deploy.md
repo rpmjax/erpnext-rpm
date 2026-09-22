@@ -1,184 +1,125 @@
-# Ubuntu VM：部署目前 Work Log 版本
+# VM 操作程序 — 唯一有效入口
 
-本套件建立獨立 ERPNext + rpm_worklog 站台，不覆蓋既有原生 Bench、不攜帶測試人員／交易資料。角色內部名稱暫沿用 Pilot，功能與目前試辦版本相同。公司、人員及真實工號需在新站建立或匯入；主管 Analytics 已支援依 Employee Number／姓名搜尋個別直屬員工。
+更新：2026-09-22。版本目標與環境最後觀測只看 [PROJECT_STATUS](PROJECT_STATUS.md)。日期型 vm-update 文件僅為歷史紀錄，不再依其舊版本命令更新。
 
-## 1. 必要條件
+本程序對應 deploy/deploy.sh 現有實作，未新增 wrapper。命令在 Linux VM 執行，逐條執行、錯誤即停。GCP 暫不操作；若日後使用仍須先核對該機資源與防火牆。
 
-Ubuntu 已安裝 Docker Engine、Compose plugin、Git、OpenSSL；執行帳號能使用 Docker。尚未安裝 Docker 時，依 [Ubuntu 官方安裝文件](https://docs.docker.com/engine/install/ubuntu/) 安裝，先核對 OS 支援版本。本腳本不修改 Nginx、Supervisor、OS 網路或防火牆。
+## 1. 選定環境（每次 SSH session 都做）
 
-原站需已有離機備份；確認 VM 有足夠資源同時運作兩套 ERPNext。這是獨立部署，不是把 App 裝進原 erpnext.local。
-
-## 2. SSH 下載與設定
-
-Windows：
-
-```powershell
-ssh paskadmin@192.168.0.70
-```
-
-Ubuntu 首次下載：
-
-```bash
-mkdir -p ~/src
-cd ~/src
-git clone https://github.com/rpmjax/erpnext-rpm.git
-cd erpnext-rpm
-```
-
-已有 repo：
+Hyper-V，使用 paskadmin：
 
 ```bash
 cd ~/src/erpnext-rpm
-git status --short
-git pull --ff-only origin master
+export RPM_STATE_DIR=/home/paskadmin/.config/rpm-worklog-vm
 ```
 
-有未保存修改／不同分支時先處理，不使用強制 reset。正式使用請記錄本次 commit。
+GCP，使用 paskcoltd（僅將來需要操作時）：
+
+```bash
+cd /opt/erpnext-rpm
+export RPM_STATE_DIR=/home/paskcoltd/.config/rpm-worklog-gcp
+```
+
+不要混用 root 的 HOME、不同 state directory 或另一個 Compose project。不修改主機 DB/Redis、其他網站或全域 listeners。
+
+## 2. 唯讀盤點：先辨識正在運行什麼
+
+```bash
+date -Is
+git status --short --branch
+git rev-parse HEAD
+test -f "$RPM_STATE_DIR/deploy.env"
+# 僅讀管理者已建立的可信設定檔
+set -a
+. "$RPM_STATE_DIR/deploy.env"
+set +a
+printf 'Project=%s Site=%s TargetImage=%s\n' "$RPM_PROJECT" "$RPM_SITE" "$RPM_IMAGE"
+docker compose --env-file "$RPM_STATE_DIR/deploy.env" -p "$RPM_PROJECT" -f deploy/compose.yaml ps -a
+for cid in $(docker compose --env-file "$RPM_STATE_DIR/deploy.env" -p "$RPM_PROJECT" -f deploy/compose.yaml ps -q); do
+    docker inspect --format '{{.Name}} image={{.Config.Image}} id={{.Image}} running={{.State.Running}} restarts={{.RestartCount}}' "$cid"
+done
+bash deploy/deploy.sh status
+```
+
+Git SHA＝下載的程式；TargetImage＝下次操作使用的設定；inspect＝實際運行。三者不同不一定是故障，但代表更新階段尚未一致。`0.1.0 UNVERSIONED` 不能辨識自訂 app commit。detached HEAD 是固定版本部署的預期狀態，不必修成 branch。
+
+有工作目錄修改、站名/project 不符、服務異常或混用 app images 時先停，保留輸出和 logs；不要 reset、init 或刪 volumes。
+
+## 3. 既有站更新
+
+先安排無人寫入的維護窗口、確認磁碟/記憶體與備份目的地。低資源機不並行操作。
+
+```bash
+free -h
+df -h . "$RPM_STATE_DIR"
+bash deploy/deploy.sh backup
+```
+
+記下輸出的備份路徑，複製到 VM 外受控位置，確認檔案完整。備份含秘密，不貼公開訊息。活躍寫入期間備份不保證附件與 DB 同一時間點；update 還會在維護期間再備份。
+
+從狀態頁選定固定候選 SHA 或 release tag，替換下列字串；不要照貼占位文字，也不以 branch HEAD 默認目標：
+
+```bash
+TARGET_REF='替換為狀態頁的固定SHA或release標籤'
+git fetch origin --tags
+git rev-parse --verify "$TARGET_REF^{commit}"
+git switch --detach "$TARGET_REF"
+git log -1 --oneline
+bash deploy/deploy.sh build
+```
+
+build 成功僅代表映像完成，設定 TargetImage 已改，運行容器此時仍可能是舊版。重跑第 2 節核對目標後：
+
+```bash
+bash deploy/deploy.sh update
+bash deploy/deploy.sh status
+```
+
+update 的實際順序：維護模式→停止入口/worker/scheduler→備份舊容器資料→停 backend→新映像 migrate→重啟 app 服務→關閉維護模式→九服務 verify。它已內建 60 秒觀察，不必成功後立刻重複測試；需要獨立補驗時用 `bash deploy/deploy.sh verify`。
+
+注意：目前腳本在 verify 前已恢復入口及關閉維護模式，因此 verify 失敗不保證站台仍停用。失敗時須重新盤點，不能一概視為封閉安全狀態。這是已知行為，未在本批修改腳本。
+
+## 4. 成功與驗收
+
+更新成功至少有 SERVICES_STABLE；實際 app 容器映像與目標一致，DB/backend healthy。保存 migration/verify 結果，重新執行唯讀盤點。
+
+```bash
+curl --max-time 10 -I -H "Host: $RPM_SITE" "http://${RPM_BIND_IP}:${RPM_PORT}/login"
+curl --max-time 10 -H "Host: $RPM_SITE" "http://${RPM_BIND_IP}:${RPM_PORT}/api/method/ping"
+```
+
+浏览器保存未存變更後 Ctrl+Shift+R，使用原帳號核對：本人紀錄/附件、主管範圍、送審/退回/核准、本批功能。翻譯帳號語系需為 zh-TW；若原始碼更新而 Client Script 未同步，檢查 migrate，不能只靠清瀏覽器快取。
+
+將觀測時間、實際版本與結果回填狀態頁。沒有回報就維持 unknown；HTTP 200 不等於業務驗收通過。
+
+## 5. 失敗／接續／回復
+
+```bash
+bash deploy/deploy.sh logs
+```
+
+- build 失敗：舊容器通常仍在運行；先查資源與 build log，不能進 update。
+- migration 失敗：保留資料、備份與維護狀態，確認原因後再決定接續；不反覆 init。
+- verify 失敗：盤點實際容器、維護狀態與入口，不假設未開放。
+- 已完成更新但未驗收：先驗收，不重新執行整套流程。
+- 需要回復：先保存事故後新增資料，再按 [DR 方案](disaster-recovery-validation.md) 以相符映像、DB、附件及 encryption_key 在隔離環境還原；不把 git switch 舊 SHA 當作資料回復。
+
+backup 的 deploy.env 可能指向新目標，但 running-image.txt 才記錄當時執行映像。兩者不一致時，依同批備份與實際映像證據判斷，不盲目覆蓋設定。完整 DR 尚未通過，不宣稱有一鍵 rollback。
+
+## 6. 全新站（獨立流程，既有站禁止使用）
+
+確認目標為空白、獨立 project/volumes、loopback 埠未占用，Docker/Compose/Git/OpenSSL 可用，並選好固定程式版本及 state directory：
 
 ```bash
 bash deploy/deploy.sh configure
-```
-
-設定在 `~/.config/rpm-worklog-vm/deploy.env`。預設 project `rpm-worklog-vm`、站名 `worklog.internal`、只綁 `127.0.0.1:8085`。先確認埠未使用。若要改站名／project，必須在 init 前修改；建立後不可只改變數當作搬站。
-
-隨機密碼位於同目錄 `admin-password`（ERPNext Administrator）與 `db-password`（資料庫 root）。目錄只允許部署者存取，密碼檔供容器唯讀掛載；請用密碼管理器保存 Administrator 密碼，不貼到 Git／聊天紀錄。既有 VM 的 OS 密碼不變。
-
-## 3. 建置並初始化
-
-```bash
+# 在 init 前核對 deploy.env 的 project/site/bind/port
 bash deploy/deploy.sh build
 bash deploy/deploy.sh init
 bash deploy/deploy.sh status
 ```
 
-build 依 Git commit 建立 App 映像；init 建立獨立資料庫、Redis、站台與角色／入口，再啟動服務。第一次需下載映像並建立 ERPNext，可能耗時數分鐘。
+configure 產生 DB/Administrator secrets，不能提交 Git。init 不覆寫既有站；中途失敗先查 logs，不刪資料重試。新站 Asia/Taipei 驗證應 PASS，既有站更新保留時區。HTTPS、DNS、主機 firewall 另行處理；[GCP 特例](gcp-cyberpanel-deployment-2026-09-21.md)不是通用必要條件。
 
-成功應出現 `RPM_INIT_SUCCESS`，status 應列出 frappe、erpnext、rpm_worklog。若 init 中途中斷，不刪 volume 或強制重建；保留 logs 以辨識已完成階段。再次 init 遇既有站會拒絕覆寫，避免誤清資料。
+## 7. 下一批工具改善（尚未實作）
 
-## 4. 從自己電腦登入驗收
-
-另開 Windows 終端，保持此 SSH tunnel 連線：
-
-```powershell
-ssh -N -L 8085:127.0.0.1:8085 paskadmin@192.168.0.70
-```
-
-瀏覽器開啟 http://127.0.0.1:8085 ，帳號 `Administrator`，密碼為上述 admin-password 檔內容。此處 127.0.0.1 經 tunnel 轉送 VM，不是本機舊 8083 Docker。
-
-完成 ERPNext 設定精靈：國家 Taiwan、幣別 TWD、時區 Asia/Taipei、公司資料與管理員資料依實際填寫。語系可先 en 再调整 zh-TW。外寄郵件預設停用，正式通知需另行配置。
-
-## 5. 匯入／開通人員
-
-先建立 Company、Department、Designation、User（System User）、Employee，設定唯一 User 綁定與 Reports To；不要把範例主檔當正式人員。真實工號維持來源欄位，不改寫成 HR-EMP 編號。
-
-管理員完成主檔後，Ubuntu shell 執行（替換實際已建立的 email）：
-
-```bash
-bash deploy/deploy.sh enroll employee@example.com employee
-bash deploy/deploy.sh enroll manager@example.com manager
-```
-
-這會設定最低試辦角色、本人 Employee User Permission 與預設 Employee；不建立帳號、不重設密碼、不授予 System Manager。主管同時需要填本人工作紀錄時，對同帳號再執行 employee 開通。
-
-主管的 Employee 必須為 Active 且 User 啟用；員工 Reports To 指向該主管。開通員工後，登入 /desk 應見「我的工作紀錄」；主管可見「直屬員工工作紀錄」。報表由列表／主管頁入口進入。
-
-## 6. 備份與更新
-
-```bash
-bash deploy/deploy.sh backup
-```
-
-資料庫、附件與 site_config、部署設定及執行映像記錄複製到 `~/.config/rpm-worklog-vm/backups/時間/`。這仍在 VM 內，須複製到 VM 外受控位置，並演練還原。檔案含秘密及私人資料，不能上傳 Git。
-
-更新必須在維護窗口進行：
-
-```bash
-git status --short
-git pull --ff-only origin master
-bash deploy/deploy.sh build
-bash deploy/deploy.sh update
-bash deploy/deploy.sh status
-```
-
-update 啟用維護、停止入口／工作程序後備份，再用新映像 migrate，成功才恢復服務。失敗時維持停用／維護狀態；不要反覆 init。更新前確認無長時間背景工作，腳本等待工作程序退出最多 120 秒。
-
-如需回滾，先保留事故時資料。資料庫 schema 已改變時，不能只切回舊映像；依備份的版本／附件／site_config 還原到隔離環境，核對後再切入口。完整策略見 [正式上線手冊](ubuntu-hyperv-go-live-runbook.md)。
-
-## 7. 公司網路正式開放
-
-預設 tunnel 僅供驗收。正式開放前，以公司 DNS 與 HTTPS 反向代理轉送 loopback 8085，配置 WebSocket，完成備份還原與權限驗收。不要直接把 DB／Redis 發布到 LAN。
-
-既有原站 80／443 的代理修改須另外安排；本套件不自動接管埠或改寫原站。遠端 Hyper-V 搬移亦依正式上線手冊辦理，避免來源／目的 VM 同時用相同 IP。
-
-## 8. 驗收與診斷
-
-- 員工登入、新增兩列工時、保存、本人隔離。
-- 單筆／批次送審；主管退回、員工同單補正、主管核准與鎖定。
-- 主管直屬範圍、報表與原單合計相符。
-- 重啟後入口及背景服務恢復；備份可還原。
-
-```bash
-bash deploy/deploy.sh logs
-bash deploy/deploy.sh status
-```
-
-切勿將秘密或完整站台設定貼入公開 issue。套件交付與本機全新安裝驗證不代表實際 VM 已安裝；VM 操作與畫面驗收仍由使用者執行。
-
-## 已完成的交付驗證（2026-09-15）
-
-- 以獨立 Compose project 與空白 volumes，在 MariaDB 11.8.6、ERPNext 16.34.1、Frappe 16.33.0 上完成 new-site、install-app、migrate，出現 RPM_INIT_SUCCESS。
-- managed bootstrap 重跑保留三個報表設定，沒有依賴既有 PoC Server Script。
-- `scripts/test_managed_install.py` 通過：開通／重複開通、兩員工隔離、每日合計、主管查詢、報表、退回補正及核准；測試人員與工作紀錄 rollback。
-- HTTP：登入與 Administrator 驗證、表單 metadata、App 圖示資源成功；Guest 主管查詢被拒。
-- 備份後在另一隔離站 restore＋migrate，確認合成 Activity Type 標記、私人測試附件內容及三個報表設定完整。
-- Bash／JavaScript 語法檢查通過，backend healthcheck healthy。
-- 此為本機 Docker Linux 全新安裝演練；未宣稱已在實際 Ubuntu VM 執行，也未替代使用者的瀏覽器驗收。
-
-## 2026-09-15 queue-short 修正
-
-abb1d86 的行內 YAML 未將 `short,default` 加引號，解析後變成兩個參數。映像實測 Bench 5.31.0／Frappe 16.33.0 的 `bench worker --help` 要求逗號分隔的單一字串；正確設定為 `command: [bench, worker, --queue, "short,default"]`。
-
-已部署 abb1d86 且僅 worker 啟動異常的 VM，於 repo 目錄執行：
-
-```bash
-git pull --ff-only origin master
-bash deploy/deploy.sh repair-workers
-bash deploy/deploy.sh status
-```
-
-此修正只需套用 Compose，不需重新 build、init 或修改 VM 檔案。repair-workers 讓 Compose 套用 worker 設定，再檢查所有九個常駐服務。保留既有資料庫、附件、密碼與站台。
-
-新安裝及一般 update 現在也會執行穩定性檢查：等待服務 running／已定義的健康檢查通過後，連續觀察 60 秒；任一服務停止、健康檢查失敗或容器重啟／更換則回報失敗。可獨立執行 `bash deploy/deploy.sh verify`。這是啟動檢查，不取代長期監控或實際背景工作驗收。
-
-此修正重新以空白 volumes 建站，並額外投遞 short、default、long 三個背景工作，確認均 finished。Compose 參數回歸測試為 `scripts/test_compose_queues.py`，使用 Docker Compose 實際解析結果檢查 argv。
-
-重新驗證結果：全新部署的 db、redis-cache、redis-queue、backend、websocket、queue-short、queue-long、scheduler、frontend 九個服務，在至少 180 秒觀察期間均 running、RestartCount=0，容器啟動時間未變；DB／backend 的健康檢查為 healthy。三種佇列測試工作均完成（`scripts/test_worker_queues.py`）。這是本機隔離新站的實測，VM 仍需拉取並執行上述修復指令。
-
-## 新站時區
-
-新部署固定初始化 **Frappe System Settings timezone = Asia/Taipei**，並保護首次設定精靈不被 Taiwan 的缺漏時區選項改回 Africa/Abidjan。初始化成功前會列出 `Frappe System Settings timezone -> Asia/Taipei -> PASS`。
-
-既有站台的 build／update／repair 不設定或覆寫時區。已手動修正的 VM 不需重建或重跑 init。[原因與驗證](fresh-site-timezone.md)。
-
-## 切換內網入口
-
-192.168.0.70 仍指向舊站時，依 [內網入口切換與回復](lan-cutover.md) 先檢查現行 Nginx，再切換至 Docker 8085；不重跑 init。
-
-## enroll 布林參數修正（2026-09-16）
-
-Bench execute 的 --kwargs 使用 Python literal；舊腳本 JSON false/true 造成 NameError，開通函式尚未執行。已改用 repr(dict) 安全編碼，保留 subprocess argv 傳遞。員工／主管與引號輸入已通過 scripts/test_enroll_cli.py 及實際 Bench parser 測試。遇此錯誤只需 git pull --ff-only origin master 後重跑 enroll，不需 build、update 或 init。
-
-## 管理介面開通
-
-更新含開通管理功能的 App 後，System Manager 可使用 [工作紀錄開通管理](worklog-access-management.md) 單筆／批次開通，無須逐位 SSH enroll。既有 SSH 指令保留並共用相同權限衝突檢查。
-
-## 2026-09-18 既有 VM 更新
-
-已建立公司與員工的 VM，請依 [跨日目標版本更新步驟](vm-update-work-target-2026-09-18.md) 更新。
-沿用既有資料與帳號，使用 build + update；不要重新 configure/init。
-
-## 2026-09-21 第二主機驗證與 DR 狀態
-
-GCP CyberPanel VM 已由操作人完成 625514b3b806 空白站部署及 HTTPS login 驗證；詳見 [實測環境、CSF firewall 與代理紀錄](gcp-cyberpanel-deployment-2026-09-21.md)。CyberPanel 並非正式架構必要元件。
-
-既有局部 restore 演練不等於完整災難復原；目前缺口與最小驗證方案見 [DR validation](disaster-recovery-validation.md)。此 GCP 使用自訂 RPM_STATE_DIR，每次 SSH 操作需明確 export，勿誤用預設目錄。
+優先新增唯讀 report：一次列出 Git/設定/各服務 image ID 與差異；其次輸出脫敏部署 manifest。安全 wrapper 待另批實作，須保留備份、固定版本、停機、驗證及錯誤退出，不自動選最新版或自動降版。

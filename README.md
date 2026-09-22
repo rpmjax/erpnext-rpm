@@ -1,79 +1,21 @@
 # ERPNext RPM
 
-以 ERPNext / Frappe 建立公司的工作管理平台，第一個落地用途為 **員工每日工作紀錄**。
+以 Frappe / ERPNext + rpm_worklog 提供個人工作紀錄、直屬主管審核、跨日工作目標與報表。使用獨立 Docker Compose；CyberPanel 不是必要元件。
 
-## 目前狀態
+## 五分鐘接手
 
-2026-09-15 最新：[SSH VM 部署指令](docs/ssh-vm-deploy.md)已提供獨立 Compose、空白站初始化、帳號開通、備份與更新。全新安裝、審核／權限與還原演練通過；Ubuntu VM 尚待使用者部署，真實人員不包含在套件內。此狀態取代下方「套件尚未完成」的歷史紀錄。
+1. **[目前位置與安全下一步](docs/PROJECT_STATUS.md)**：發布、候選、各環境最後觀测與未完成事項。
+2. **[唯一部署／更新操作程序](docs/ssh-vm-deploy.md)**：盤點、備份、固定版本、build、update、verify 與失敗處理。
+3. **[備份還原缺口與演練方案](docs/disaster-recovery-validation.md)**：不把新站重建當成完整 DR。
 
-2026-09-15：[Ubuntu／Hyper-V 正式上線操作手冊](docs/ubuntu-hyperv-go-live-runbook.md)已準備，涵蓋安裝前置工作、資料與備份、驗收、搬機、切換與回滾；尚未執行 VM 部署。
+不由 README、branch 名稱或本機 Git 推定 VM 已更新。狀態頁中的環境版本都是帶來源的最後觀測，不是即時監控。
 
-2026-09-14 最新：[進度、真實工號待辦與 VM SSH 部署準備](docs/progress-and-vm-deployment-2026-09-14.md)。[可設定報表／圖表第一版](docs/worklog-analytics-poc.md)已部署本機 Docker，數值 HTML 顯示已修正；真實工號搜尋尚未實作，VM 安裝移植尚未完成。下方為歷史進度。
+## 開發與文件規則
 
-2026-09-14：[路線圖與操作改善批次](docs/roadmap-2026-09-14.md)：物料按鈕前移、頁首送審及列表批次送審已部署，自動測試通過，待人工驗收。可設定圖表列為下一階段，尚未實作。
+- 變更程式在 `apps/rpm_worklog`；部署工具在 `deploy`；驗證腳本在 `scripts`。
+- 每批提交留下版本、驗證範圍、未完成事項及下一步；更新狀態頁後 push。只有發布決策確認後才建立不可移動的 release tag。
+- 日期進度／交付文件是歷史證據，不是另一套更新程序。既有版本紀錄由 Git 保存。
+- 不提交帳密、site_config、真實資料備份或私人附件。
+- 資料模型與權限不因介面簡化而放寬；不直接修改 Frappe / ERPNext 核心。
 
-2026-09-14：[工作紀錄單位暫停](docs/units-paused.md)已部署；不需單位即可記錄數量，既有單位資料與 ERPNext UOM 主檔保留。此決定取代先前單位必填規格。
-
-2026-09-11：[選填物料關聯第一版](docs/item-link-v1.md)已部署，保留自由文字、提供搜尋與解除關聯、單位驗證及品名快照；自動測試通過，待人工驗收。不異動庫存。
-
-2026-09-11：使用者已授權 Custom App **rpm_worklog**，已部署[審核與同單補正](docs/review-app-poc.md)。伺服器測試通過，待人工驗收。下方未授權／未建立 Custom App 文字為先前 B 原型階段，不代表最新狀態。
-
-2026-09-11：[直屬主管唯讀查閱](docs/team-viewer-poc.md)已配置一位試辦主管；動態 Reports To 與隔離測試通過，待人工驗收。主管使用專用頁看明細，原單仍不開放讀寫；審核另輪開發。
-
-2026-09-11：[資料規則與手動驗收](docs/worklog-data-rules.md)已部署 Docker。允許同日多張及重複 Title；伺服器驗證、單張總工時、本人每日彙總完成自動測試，待使用者手動驗收。
-
-最新：[兩位員工登入與本人隔離驗收](docs/employee-access-poc-2026-09-10.md)已通過；專用入口、自動帶入、保存重載與跨帳號拒絕存取已實測。其餘員工尚未開放，主管流程與資料規則仍待完成。以下匯入進度為前一階段紀錄。
-
-2026-09-10：[最新進度彙整](docs/progress-2026-09-10.md)。Docker 已匯入 33 個 User、來源公司及 7 個部門、33 個 Employee（32 個 User 綁定、32 個主管關聯）。來源缺漏與重複員工號已記錄；一般員工工作紀錄權限及完整流程尚未完成。人員資料與帳密未提交 Git。
-
-使用者已選擇 **B：先驗證 Daily Work Log 模型，再決定 C 正式化**。獨立 [Docker 模型原型](docs/docker-model-poc.md) 已於 http://127.0.0.1:8083 建立，管理員可分欄保存數量／單位／結果／工時，不需起訖時間；員工權限、審核與完整規則尚未驗收，未建立 Custom App。
-
-兩份後續研究報告已納入 [需求清單](docs/requirements-backlog.md)、[ADR-001 架構決策](docs/adr-001-work-log-model.md) 與 [下一輪驗收](docs/next-poc-acceptance.md)。已選 B 並建立 Custom DocType 原型，不再預設直接往 Timesheet 加欄位；Custom App 尚未授權或部署。
-
-2026-09-09 員工瀏覽器 PoC 結論為 **PARTIAL**：無 Project / Task 可保存本人紀錄，但結構化數量／單位、主管審核及資料隔離尚未完成。最新範圍與修正順序見 [PoC 結論與修正計畫](docs/work-log-poc-plan-2026-09-09.md)；本輪僅應用層 PoC，不建立 Custom App 或修改服務。
-
-已完成 Hyper-V VM 內的 ERPNext 服務啟用與獨立測試站建置，正在驗證每日工作紀錄的實作路線；尚未完成客製日報 App。
-
-| 用途 | 區網網址 | 站台 |
-|---|---|---|
-| 原有站台／未來正式站候選 | http://192.168.0.70 | erpnext.local |
-| 本地測試 | http://192.168.0.70:8080 | rpm-test.local |
-
-實測版本為 ERPNext 16.34.1 / Frappe 16.33.0。兩站使用不同資料庫與附件目錄，但共用同一台 VM、Bench 程式碼與服務；尚非完全隔離的開發環境。正式上線與搬移前須再處理環境分離。
-
-## 第一階段目標
-
-- 員工一天一張紀錄，像表格一樣新增與刪除工作列。
-- 每列記錄分類、工作事項、結果／進度與工時。
-- 自動計算當日工時，Project / Task 選填。
-- 儲存草稿、送主管審核、退回修改、核准後鎖定。
-- 依日期、人員、部門與分類查看工作及工時。
-- 提供清楚的繁體中文入口，減少每天填寫的操作成本。
-
-這些是第一版提案；主管制度、部門名單及試辦人數仍需依實際組織確認。第一階段範圍集中於工作紀錄，既有 ERP 的整合另行規劃。
-
-## 文件
-
-- [2026-09-10 模型與組織匯入進度](docs/progress-2026-09-10.md)
-
-- [工作紀錄與翻譯需求清單](docs/requirements-backlog.md)
-- [ADR-001：模型與翻譯維護路線](docs/adr-001-work-log-model.md)
-- [下一輪 PoC 驗收](docs/next-poc-acceptance.md)
-
-- [2026-09-09 員工 PoC 結論與修正計畫](docs/work-log-poc-plan-2026-09-09.md)
-
-- [每日工作紀錄 MVP 規格](docs/daily-work-log.md)
-- [技術路線與原生功能驗證](docs/implementation-plan.md)
-- [試辦驗收清單](docs/acceptance.md)
-- [VM 操作、備份與搬移](docs/vm-operations.md)
-- [原生 Timesheet 實測結果](docs/timesheet-findings.md)
-
-## 開發原則
-
-優先驗證 ERPNext 原生 Timesheet；若輸入方式或員工資料要求不適合，再使用獨立 Frappe App 建立 Daily Work Log。客製程式與可匯出的設定納入此 repo，避免直接修改 ERPNext / Frappe 核心。
-
-附上的研究報告是背景參考，其中的命令、建議、公司資訊與時程不自動成為使用者已確認的需求。官方能力與實際站台行為也應分開記錄。
-
-## 下一步
-
-依使用者決定忽略來源例外；兩位員工本人存取已驗收，接著驗證 B 模型的資料規則、直屬主管權限與同單補正。翻譯先核對匯入結果、建立受 Git 管理的小批清單，再評估自動同步。Custom App 與原站部署另行決定。不要將密碼、API token、站台備份或真實員工資料加入 Git。
+需求與延期決策見 [backlog](docs/requirements-backlog.md)；早期架構背景見 [ADR-001](docs/adr-001-work-log-model.md)。
