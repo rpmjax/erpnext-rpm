@@ -1,8 +1,8 @@
 frappe.ui.form.on('RPM Daily Work Log', {
     setup(frm) {
         frm.set_query('item_code', 'lines', () => ({query:'rpm_worklog.items.link_query'}));
-        let sequence = 0, timer, menu;
-        const close = () => { ++sequence; clearTimeout(timer); if (menu) menu.remove(); };
+        let sequence = 0, timer, menu, options = [], active = -1, choose;
+        const close = () => { ++sequence; clearTimeout(timer); if (menu) menu.remove(); menu = null; options = []; active = -1; };
         $(frm.wrapper).on('focusin.rpmMaterialTarget click.rpmMaterialTarget', '[data-fieldname="lines"] .grid-row', function() {
             const name = $(this).attr('data-name');
             if ((frm.doc.lines || []).some(r => r.name === name) && frm.rpm_material_row !== name) {
@@ -24,10 +24,35 @@ frappe.ui.form.on('RPM Daily Work Log', {
                     const rect = input.getBoundingClientRect();
                     menu = $('<div role="listbox" class="dropdown-menu" style="display:block;position:fixed;z-index:2000;max-height:240px;overflow:auto">').css({top:rect.bottom,left:rect.left,width:Math.min(420,window.innerWidth-rect.left-12)}).appendTo(document.body);
                     $('<div class="text-muted" style="padding:8px">').text('可直接保留輸入文字；點選以下物料才建立關聯。').appendTo(menu);
+                    choose = async item => {
+                        const typed = input.value;
+                        close();
+                        // Commit the editor before opening a modal: blur may otherwise change
+                        // row.work_item while the replacement confirmation is pending.
+                        input.blur();
+                        await frappe.model.set_value(row.doctype,row.name,'work_item',typed);
+                        await rpm_choose_item(frm,row,item);
+                        frm.refresh_field('lines');
+                    };
                     items.forEach(item => $('<button type="button" class="dropdown-item" style="white-space:normal">').text(`${item.name} | ${item.item_name}`).appendTo(menu)
-                        .on('mousedown', e => e.preventDefault()).on('click', async () => { close(); await rpm_choose_item(frm,row,item); frm.refresh_field('lines'); }));
+                        .on('mousedown', e => e.preventDefault()).on('click', () => choose(item)));
+                    options = items;
                 } catch (e) { close(); }
             },250);
+        }).on('keydown.rpmFreeItem', 'input[data-fieldname="work_item"]', function(e) {
+            if (!menu || !options.length || e.isComposing) return;
+            if (['ArrowDown','ArrowUp','Enter','Escape'].includes(e.key)) {
+                if (e.key === 'Enter' && active < 0) return;
+                e.preventDefault(); e.stopImmediatePropagation();
+                if (e.key === 'Escape') { close(); return; }
+                if (e.key === 'Enter') { choose(options[active]); return; }
+                active = (active + (e.key === 'ArrowDown' ? 1 : (active < 0 ? 0 : -1)) + options.length) % options.length;
+                menu.find('button').each(function(i) {
+                    $(this).attr('role','option').attr('aria-selected',i === active ? 'true' : 'false')
+                        .css({background:i === active ? '#dcecff' : '',color:i === active ? '#123c69' : '',outline:i === active ? '2px solid #1677d2' : ''});
+                    if (i === active) this.scrollIntoView({block:'nearest'});
+                });
+            }
         }).on('focusout.rpmFreeItem', 'input[data-fieldname="work_item"]', close);
     },
     refresh(frm) { rpm_material_toolbar(frm); }
