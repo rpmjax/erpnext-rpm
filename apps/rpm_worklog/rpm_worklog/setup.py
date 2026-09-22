@@ -82,7 +82,7 @@ def install():
     if frappe.db.exists('Server Script','RPM Work Log Validation'):
         frappe.db.set_value('Server Script','RPM Work Log Validation','disabled',1)
     root=Path(__file__).parent / 'public' / 'js'
-    for name,dt,source in [('RPM Identity Display','RPM Daily Work Log','identity.js'),('RPM Item Picker','RPM Daily Work Log','item_picker.js'),('RPM Employee Review','RPM Daily Work Log','employee_review.js'),('RPM Team Viewer','RPM Team Work Log Viewer','team_review.js'),('RPM Mobile Entries','RPM Daily Work Log','mobile_entries.js')]:
+    for name,dt,source in [('RPM Identity Display','RPM Daily Work Log','identity.js'),('RPM Item Picker','RPM Daily Work Log','item_picker.js'),('RPM Employee Review','RPM Daily Work Log','employee_review.js'),('RPM Team Viewer','RPM Team Work Log Viewer','team_review.js'),('RPM Mobile Entries','RPM Daily Work Log','mobile_entries.js'),('RPM Personal Sidebar','RPM Daily Work Log','personal_sidebar.js')]:
         d=frappe.get_doc('Client Script',name) if frappe.db.exists('Client Script',name) else frappe.new_doc('Client Script')
         d.update(dict(name=name,dt=dt,view='Form',enabled=1,script=root.joinpath(source).read_text(encoding='utf-8-sig')));d.save()
     name='RPM Bulk Submit'
