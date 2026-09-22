@@ -66,3 +66,6 @@ Grouping field is unavailable or incompatible,分組欄位已停用或不相容�
 Measure is unavailable or incompatible with report grain,統計欄位已停用或與資料層級不相容
 Select at most 366 days,日期範圍最多 366 天
 "More than 500 groups; narrow the date range",超過 500 組，請縮小日期範圍
+In Progress,進行中
+Completed,已完成
+Blocked,擱置
