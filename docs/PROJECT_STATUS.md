@@ -1,5 +1,72 @@
 # PROJECT STATUS — 五分鐘接手
 
+## 2026-10-01：目前開發 checkpoint（未提交／未發布）
+
+- 目前分支：`codex/worklog-management-analysis`，基底 `54b9d95`；候選仍是工作目錄變更，
+  尚無可供 VM 更新的固定 candidate commit/tag。
+- 使用者已回報本地公司分析與員工／部門多選操作確認；這是該操作範圍的驗收，
+  不等於正式 VM 部署、完整權限稽核或災難復原驗證。
+- 本輪重新執行 analysis、reports、target summary 三組測試，全部通過。
+  執行命令見下方 2026-09-30 紀錄；測試資料 rollback，未部署。
+- Analysis Contract 已升為長期完成條件；README 與 PR 範本指向同一規則。
+- 下一步：保留此候選供提交前審查；發布前須產生固定提交，並在隔離環境以完整 image
+  驗證安裝／更新流程。本地 8086 目前是局部程式覆蓋，不能作為完整 image 驗證證據。
+- 既有報表共用 Dataset 是後續獨立範圍；原生 0-row export 另支處理。
+  本批不合併工時分支、不修原生 exporter、不更新 Hyper-V/GCP。
+
+### 本批 Analysis impact
+
+用途：授權範圍內逐工作列分析與完整匯出。
+Dataset：Worklog analysis v1，契約見 [Analysis Contract](WORKLOG_ANALYSIS_CONTRACT.md)。
+粒度：一筆工作子列；鍵為 work_log + line_id。
+權限：Self／Team 保留既有規則；Organization 使用管理角色、Employee 與設定公司。
+分析授權可與原生 DocType 不同，但不新增原始單據編輯／審核／原生匯出權限。
+JOIN / 加總規則：子列連母單及目前 Employee；Hours 按子列加總，單數 distinct；
+不重複累加母單總時數，Quantity 不跨不同單位／業務意義任意合計。
+使用端：明細 dialog、CSV、XLSX；既有摘要 Report 保留原查詢，未新增 Dashboard。
+驗證：`scripts/test_analysis_poc.py` 覆蓋授權／越權、JOIN 範圍、分頁與完整匯出；
+310 列案例對帳 335.6h，CSV/XLSX 均 28 欄；既有 reports、target summary 回歸通過。
+本地多選實測 16 張／26 列／37.229h；完整 image 更新驗證尚未完成。
+不納入理由（如適用）：審核事件未 JOIN，以免同一工作列因事件數重複。
+
+## 2026-10-01：分析多選（本地 8086 已套用）
+
+- 員工可依工號／姓名搜尋並複選；部門依授權紀錄的保存值搜尋複選。
+  同欄位 OR、跨欄位 AND；CSV/XLSX 使用同一 filters。每欄最多 100 項。
+- scope 改變會清空選取；條件改變使舊查詢／下载失效。候選不受日期限制，介面有提示。
+- 新增後端多選、去重、越權排除、候選隔離、工號／姓名、歷史部門與下載集合測試；
+  analysis 和既有 reports 回歸通過，JS syntax 與 diff check 通過。
+- PS00010 瀏覽器實測選 J250301 + T181001 與兩部門，2026-09-01～10-01 得到
+  16 張／26 列／37.229h。僅本地更新，Hyper-V/GCP、Frappe exporter 未改。
+- 修正分析入口 DocPerm 的 Frappe 預設 write/create：明確關閉管理角色入口寫入，
+  原始 Work Log 寫入權限從未新增。未 commit/merge/push。
+
+## 2026-09-30：公司分析候選（僅本地 8086 已套用，未發布）
+
+- 分支 `codex/worklog-management-analysis`，基底 `54b9d95`；獨立 worktree，沒有帶入
+  `codex/reported-hours-reference` 未提交的工時修改。下方既有環境觀測仍是舊觀測。
+- 已完成測試／[資料契約](WORKLOG_ANALYSIS_CONTRACT.md)、Organization scope、逐工作列
+  analysis service、管理角色初始化、Analytics 明細 dialog、CSV/XLSX 完整下載。
+- 後端 `analysis.query` 提供 28 欄明細與完整篩選總計；Self／Team 保留舊語意。
+  既有摘要報表仍使用原查詢；不宣稱所有消費端已完成一致化。
+- 測試：`python scripts/run_analysis_checks.py rpm-work-target-phase1-backend-1
+  scripts/test_analysis_poc.py scripts/test_reports_poc.py scripts/test_target_summary_poc.py`
+  全數通過。以獨立 Python 程序載入候選 scope/analysis，資料庫 fixture 最後 rollback；
+  測試模擬 session roles，未指派實際使用者角色。沒有替換容器程式或部署。
+- 2026-09-30 使用者授權本地驗收後，僅複製 scope/analysis/analysis_export/analysis_ui
+  與 analytics.js/analysis.js 到 8086 backend；執行限定的 analysis_ui.install 並重啟 backend。
+  不是整個分支 image 重建；原容器既有其他候選修改保留。Hyper-V/GCP 未修改。
+- 本地 Company 已核對並設定「均輝企業股份有限公司」；使用者指定 PS00010
+  (ps00019@outlook.com) 加入管理角色。實際公司查詢 2026-09-01～30：16 張、26 列、37.229h。
+  rpmjaxadmin 沒有 Employee 對應，未豁免限制或替它建立對應。
+- 瀏覽器以現有普通員工 session 驗證：本人 5 張／8 列／18h，CSV 和 XLSX 實際下載
+  均 8 列、28 欄、18h。公司角色後端已驗證，PS00010 瀏覽器驗收待使用者進行。
+- 本地更新前備份：`C:/Users/PS00010/Documents/ChatGPT/erpnext-rpm-backups/local-analysis-20260930/`
+  包含 app-before 與 20260930_123004 frontend 資料庫／檔案備份。未 commit/merge/push。
+- 下一步：使用者本地驗收，再安排既有報表共用查詢。原生 0-row export defect 另支處理。
+
+## 以下為 2026-09-22 歷史交接基線（非目前開發下一步）
+
 更新日期：2026-09-22。唯一「目前狀態」入口；實際主機狀態須依 [操作程序](ssh-vm-deploy.md) 重新讀取。未取得部署證據，不能標記部署完成。
 
 ## 版本位置

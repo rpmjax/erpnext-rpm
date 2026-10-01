@@ -4,6 +4,12 @@ frappe.ui.form.on('RPM Work Log Analytics', {
         frm.doc.__unsaved = 0;
         frm.page.set_indicator(__('Read Only'), 'blue');
         const w = frm.fields_dict.results.$wrapper;
+        frm.add_custom_button('工作明細分析／匯出', () => rpm_worklog_analysis_open());
+        if (frappe.user.has_role('RPM Worklog Management') &&
+            !frappe.user.has_role('RPM Work Log Pilot') && !frappe.user.has_role('RPM Work Log Manager Pilot')) {
+            w.html('<p>公司工作明細分析：請點「工作明細分析／匯出」。可依日期與審核狀態查詢並下載完整工作列。</p>');
+            return;
+        }
         const esc = x => frappe.utils.escape_html(String(x ?? ''));
         w.html(`<a href="/desk" class="btn btn-default">${__('Back to Home')}</a>
             <p>${__('Reports use the selected dates and review status. Quantity is not aggregated.')}</p>

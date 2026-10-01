@@ -17,5 +17,6 @@
 - 日期進度／交付文件是歷史證據，不是另一套更新程序。既有版本紀錄由 Git 保存。
 - 不提交帳密、site_config、真實資料備份或私人附件。
 - 資料模型與權限不因介面簡化而放寬；不直接修改 Frappe / ERPNext 核心。
+- 新增／擴充保存工作或管理資料的 DocType，以及分析行為的變更，須在 PR 審查及開發完成前依 [Analysis Contract](docs/WORKLOG_ANALYSIS_CONTRACT.md) 填寫 Analysis impact；不納入分析也必須說明理由。新需求不必一律接入 `analysis.py`。
 
 需求與延期決策見 [backlog](docs/requirements-backlog.md)；早期架構背景見 [ADR-001](docs/adr-001-work-log-model.md)。

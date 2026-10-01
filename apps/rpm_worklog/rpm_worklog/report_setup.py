@@ -39,3 +39,5 @@ def install():
     script.update(dict(name=script_name, dt=viewer, view='Form', enabled=1,
         script=(Path(__file__).parent / 'public/js/analytics.js').read_text(encoding='utf-8-sig')))
     script.save()
+    from rpm_worklog.analysis_ui import install as install_analysis
+    install_analysis()

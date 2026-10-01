@@ -2,6 +2,34 @@
 import frappe
 from rpm_worklog.review import employee_for
 
+MANAGEMENT_ROLE = 'RPM Worklog Management'
+
+
+def analysis_scope(scope):
+    """Resolve current-session analytical read scope; never grants review/write."""
+    if scope in ('Self', 'Team'):
+        return log_scope(scope)
+    if scope != 'Organization':
+        frappe.throw('Invalid analysis scope', frappe.ValidationError)
+    user = frappe.session.user
+    if user == 'Guest' or not frappe.db.get_value('User', user, 'enabled'):
+        frappe.throw('Not permitted', frappe.PermissionError)
+    if MANAGEMENT_ROLE not in frappe.get_roles():
+        frappe.throw('Not permitted', frappe.PermissionError)
+    employee = employee_for(user)
+    company = frappe.conf.get('rpm_worklog_company')
+    if not company or not frappe.db.exists('Company', company):
+        frappe.throw('Configure a valid rpm_worklog_company before organization analysis')
+    if frappe.db.get_value('Employee', employee, 'company') != company:
+        frappe.throw('Not permitted', frappe.PermissionError)
+    return ["COALESCE(p.docstatus,0) != 2", 'e.company = %(scope_company)s'], {'scope_company': company}
+
+
+def install_analysis_role():
+    """Provision the capability only; never enroll users or grant DocType writes."""
+    if not frappe.db.exists('Role', MANAGEMENT_ROLE):
+        frappe.get_doc(dict(doctype='Role', role_name=MANAGEMENT_ROLE, desk_access=1)).insert()
+
 
 def scopes():
     if frappe.session.user == 'Guest' or not frappe.db.get_value('User', frappe.session.user, 'enabled'):

@@ -7,6 +7,8 @@ def install():
         bootstrap()
     elif not (frappe.local.site == 'frontend' and frappe.conf.get('rpm_worklog_model_poc')):
         frappe.throw('Explicit rpm_worklog_managed site configuration required')
+    from rpm_worklog.scope import install_analysis_role
+    install_analysis_role()
     line=frappe.get_doc('DocType','RPM Work Log Line')
     fields=[
         dict(fieldname='search_item',label='Search Item',fieldtype='Button'),
