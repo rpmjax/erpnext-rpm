@@ -6,6 +6,8 @@ from rpm_worklog.scope import install_analysis_role, MANAGEMENT_ROLE
 
 def install():
     install_analysis_role()
+    from rpm_worklog.settings import install as install_settings
+    install_settings()
     viewer='RPM Work Log Analytics'
     doc=frappe.get_doc('DocType',viewer)
     if not any(p.role==MANAGEMENT_ROLE for p in doc.permissions):

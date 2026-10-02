@@ -1,7 +1,7 @@
 """Rollback-only service contract checks; load candidate modules before executing."""
 import frappe
 from unittest.mock import patch
-from rpm_worklog import analysis, scope, analysis_export
+from rpm_worklog import analysis, scope, analysis_export, reports
 import csv
 import io
 from openpyxl import load_workbook
@@ -55,11 +55,35 @@ try:
                 'Completed','Activity',1,'ITEM','Snapshot','PCS',2,'TARGET','09:00:00','09:10:00')''',
                 (f'{name}-{idx}',name,idx,hours))
     filters = dict(from_date='2099-01-01',to_date='2099-01-01')
+    profiles = {}
+    for grain, measure in [('Log','total_hours'),('Entry','hours')]:
+        profiles[grain] = frappe.get_doc(dict(doctype=reports.CONFIG,
+            report_title='Analysis reconciliation '+grain, enabled=1, grain=grain,
+            group_field='department', operation='Sum', measure_field=measure,
+            sort_order='Group Ascending', chart_type='bar', default_state='All')).insert().name
     def query(kind='Organization', **kwargs):
         return analysis.query(kind, filters, **kwargs)
     roles = ['RPM Work Log Pilot','RPM Work Log Manager Pilot',scope.MANAGEMENT_ROLE]
     frappe.set_user(manager.user_id)
     with patch.object(frappe, 'get_roles', return_value=roles):
+        assert reports.options()['scopes'] == analysis.options()['scopes']
+        with patch.object(frappe, 'get_roles', return_value=[scope.MANAGEMENT_ROLE]):
+            assert reports.options()['scopes']==['Organization']
+            assert reports.run(profiles['Log'],'2099-01-01','2099-01-01','Organization')['sample_count']==4
+        for grain in profiles:
+            report = reports.run(profiles[grain], '2099-01-01','2099-01-01','Organization')
+            assert report['sample_count'] == (4 if grain=='Log' else 8)
+            assert abs(sum(r['value'] for r in report['rows'])-33.6)<1e-8
+        assert {r['value'] for r in reports.search_employees('Organization','')['employees']} == {
+            r['value'] for r in analysis.search_filters('Organization','employee','')['items']}
+        denied(lambda: reports.run(profiles['Log'],'2099-01-01','2099-01-01','Organization',employee=foreign.name))
+        selected = reports.run(profiles['Entry'],'2099-01-01','2099-01-01','Organization',employee=inactive.name)
+        assert selected['sample_count']==2
+        frappe.db.set_value('Employee',own.name,'department',None)
+        frappe.db.set_value('RPM Daily Work Log',expected[own.name],'department',None)
+        report=reports.run(profiles['Entry'],'2099-01-01','2099-01-01','Organization')
+        assert abs(sum(r['value'] for r in report['rows'])-query()['reported_hours'])<1e-8
+        frappe.db.set_value('RPM Daily Work Log',expected[own.name],'department','Stored Department')
         data = query(page_size=1)
         assert data['total_rows'] == 8 and data['total_logs'] == 4
         assert abs(data['reported_hours'] - 33.6) < 1e-8 and data['has_more']
@@ -172,6 +196,8 @@ try:
         frappe.db.set_value('Employee',own.name,'user_id',saved_user)
     with patch.object(frappe, 'get_roles', return_value=['RPM Work Log Pilot']):
         denied(query)
+        denied(lambda: reports.run(profiles['Log'],'2099-01-01','2099-01-01','Organization'))
+        denied(lambda: reports.search_employees('Organization',''))
         denied(lambda: analysis_export.download('Organization',filters))
         assert 'Organization' not in analysis.options()['scopes']
     with patch.object(frappe, 'get_roles', return_value=roles):

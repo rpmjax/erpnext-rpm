@@ -3,7 +3,8 @@ import frappe
 from frappe import _
 from frappe.utils import getdate
 from rpm_worklog.review import employee_for
-from rpm_worklog.scope import scopes, employee_filters, log_scope
+from rpm_worklog.scope import analysis_scope
+from rpm_worklog.analysis import options as analysis_options, search_filters
 from rpm_worklog.identity import label as employee_label, FIELDS as IDENTITY_FIELDS
 
 PARENT = 'RPM Daily Work Log'
@@ -55,31 +56,25 @@ def validate_config(doc, method=None):
 
 @frappe.whitelist()
 def options():
-    allowed = scopes()
-    return dict(scopes=allowed, fields=catalog(), reports=frappe.get_all(CONFIG,
+    available = analysis_options()
+    allowed = available["scopes"]
+    return dict(scopes=allowed, company=available["company"], fields=catalog(), reports=frappe.get_all(CONFIG,
         filters={'enabled': 1}, fields=['name', 'report_title', 'default_state'], order_by='report_title', limit_page_length=0))
 
 
 @frappe.whitelist()
 def search_employees(scope='Team', text=''):
-    if scope not in scopes():
-        frappe.throw(_('Not permitted'), frappe.PermissionError)
-    filters = employee_filters(scope)
-    text = str(text or '').strip()[:100]
-    # Escape LIKE wildcards; a typed % or _ is a literal, not a directory dump.
-    pattern = '%' + text.replace('\\', '\\\\').replace('%', '\\%').replace('_', '\\_') + '%'
-    rows = frappe.get_all('Employee', filters=filters,
-        or_filters=[[field, 'like', pattern] for field in ('employee_number', 'employee_name')],
-        fields=IDENTITY_FIELDS,
-        order_by='employee_number, employee_name, name', limit_page_length=21)
-    return dict(employees=[dict(value=r.name, label=employee_label(r)) for r in rows[:20]],
-        has_more=len(rows) > 20)
+    candidates = search_filters(scope, 'employee', text)
+    names = [r['value'] for r in candidates['items']]
+    labels = {r.name:employee_label(r) for r in frappe.get_all('Employee',
+        filters={'name':['in',names]},fields=IDENTITY_FIELDS,limit_page_length=0)} if names else {}
+    return dict(employees=[dict(value=name,label=labels[name]) for name in names],
+        has_more=candidates['has_more'])
 
 
 @frappe.whitelist()
 def run(report, from_date, to_date, scope='Self', state='All', employee=None):
-    if scope not in scopes():
-        frappe.throw(_('Not permitted'), frappe.PermissionError)
+    where, scope_params = analysis_scope(scope)
     if state not in ('All', *STATES):
         frappe.throw(_('Invalid review status'))
     if not from_date or not to_date:
@@ -91,19 +86,21 @@ def run(report, from_date, to_date, scope='Self', state='All', employee=None):
     if not doc.enabled:
         frappe.throw(_('Report is disabled'))
     validate_config(doc)  # Revalidate current metadata, even for existing saved profiles.
-    me = employee_for(frappe.session.user)
-    params = {'me': me, 'user': frappe.session.user, 'start': start, 'end': end, 'state': state}
-    where, scope_params = log_scope(scope)
+    params = {'start': start, 'end': end, 'state': state}
     params.update(scope_params)
+    authorized_where = list(where)
     where.append('p.work_date BETWEEN %(start)s AND %(end)s')
     selected = None
     if employee:
-        selected = frappe.db.get_value('Employee', employee,
-            IDENTITY_FIELDS + ['reports_to', 'status'], as_dict=True)
-        permitted = selected and selected.status == 'Active' and (
-            selected.name == me if scope == 'Self' else selected.reports_to == me and selected.name != me)
+        if not isinstance(employee,str) or len(employee)>140:
+            frappe.throw(_('Not permitted'), frappe.PermissionError)
+        # Validate selection with the same live business scope, without date filtering.
+        permitted = frappe.db.sql("SELECT p.name FROM `tabRPM Daily Work Log` p "
+            "JOIN `tabEmployee` e ON e.name=p.employee WHERE " + ' AND '.join(authorized_where) +
+            " AND p.employee=%(selected)s LIMIT 1", {**scope_params,'selected':employee})
         if not permitted:
             frappe.throw(_('Not permitted'), frappe.PermissionError)
+        selected = frappe.db.get_value('Employee',employee,IDENTITY_FIELDS,as_dict=True)
         params['employee'] = employee
         where.append('p.employee = %(employee)s')
     if state != 'All':

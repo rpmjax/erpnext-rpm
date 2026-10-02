@@ -1,5 +1,31 @@
 # PROJECT STATUS — 五分鐘接手
 
+
+## 2026-10-02：目前開發 — 分析入口一致化與公司設定面板
+
+- 分支 `codex/analysis-scope-settings`，基底 `1cbd5c7`；本批候選由本節所在提交固定，尚未發布；完整 SHA 由 `git log` 取得。
+- Analytics 摘要／圖表改用與明細相同的 Self／Team／Organization 授權範圍。
+  管理角色可查公司全員（含離職）；摘要仍單選員工，明細維持員工／部門多選。
+- 新增 `RPM Worklog Settings` 管理面板，只供 Administrator／System Manager 使用；
+  不要求管理員有 Employee。沿用 `site_config.json` 的 `rpm_worklog_company`，無第二份 DB 設定。
+  公司必須存在；有競態檢查、檔案鎖、原子寫入及設定快取清除。
+  不自動授予角色、不變更 Employee，公司分析仍受既有公司／Employee 授權約束。
+- 本地 8086 已備份後套用這批指定檔案及限定 installer；不是完整 image 部署。
+  備份位於此 worktree 的 ignored `.local/scope-settings-before/`。
+  未把另一分支的工時修改帶入此 Git 分支。
+- 測試：analysis、reports、worklog settings、target summary 四組 PASS；兩份 JS syntax PASS。
+  覆蓋公司隔離、離職／空部門、管理角色不含員工角色、Log／Entry 對帳、越權、
+  設定管理權限、無 Employee 管理員、無效公司、過期修改、寫入失敗及其他設定保留。
+  本地新面板安裝及重複安裝成功；diff whitespace check 通過。
+- 瀏覽器：以現有管理角色查公司每日工時，2026-09-01～10-02 得 16 張、37.229h。
+  使用者已於 2026-10-02 確認 RPM Worklog Settings 操作驗收通過。設定寫入自動測試使用隔離暫存檔。
+- 下一步：固定本批候選，執行完整 image 安裝／更新驗證；通過後再準備 VM 交接。
+  不可直接用未提交工作目錄更新 VM。唯一 VM 更新程序仍是 [操作程序](ssh-vm-deploy.md)。
+- 部署觀測補記：先前 SSH 盤點 Hyper-V 為 `19fe20ac17d5` image／應用提交，
+  使用者隨後回報公司設定完成、重新登入可查公司全員。這是當時觀測，非本候選已部署證據。
+  本批未改 Hyper-V／GCP；候選可本地提交，未 push、merge。
+- 以下為歷史 checkpoint；當時的「VM 未更新」或「摘要未接公司範圍」不代表現在開發狀態。
+
 ## 2026-10-02：公司分析已驗收、分支已推送，待 VM 更新
 
 - 固定應用候選：`19fe20ac17d5a0d0480268e1d7eda3486f1f23ed`；分支

@@ -13,7 +13,7 @@ root = Path(__file__).resolve().parents[1]
 container = sys.argv[1]
 tests = sys.argv[2:] or ['scripts/test_analysis_poc.py']
 sources = {name:(root/'apps/rpm_worklog/rpm_worklog'/f'{name}.py').read_text(encoding='utf-8-sig')
-           for name in ('scope','analysis','analysis_export')}
+           for name in ('scope','analysis','analysis_export','reports','settings')}
 sources['tests'] = [(test,(root/test).read_text(encoding='utf-8-sig')) for test in tests]
 payload = base64.b64encode(json.dumps(sources).encode()).decode()
 code = '''import base64,json,sys,types
@@ -23,8 +23,9 @@ frappe.connect()
 assert frappe.conf.get('rpm_worklog_model_poc'), 'PoC only'
 source=json.loads(base64.b64decode(PAYLOAD))
 import rpm_worklog
-for name in ('scope','analysis','analysis_export'):
+for name in ('scope','analysis','analysis_export','reports','settings'):
     module=types.ModuleType('rpm_worklog.'+name)
+    module.__file__='/home/frappe/frappe-bench/apps/rpm_worklog/rpm_worklog/'+name+'.py'
     sys.modules[module.__name__]=module
     exec(compile(source[name],name+'.py','exec'),module.__dict__)
     setattr(rpm_worklog,name,module)

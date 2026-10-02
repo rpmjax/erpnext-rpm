@@ -124,5 +124,41 @@ More than 50,000 lines fails explicitly; no silent truncation. CSV has UTF-8 BOM
 and prefixes formula-like strings with an apostrophe; XLSX stores strings as
 literal string cells and keeps hours/quantity numeric. No Frappe export override.
 
-Existing summary reports/viewers are not rewired in this batch. Consumers
-must migrate to this contract before cross-consumer consistency is claimed.
+## Summary scope alignment and operating-company settings (2026-10-02)
+
+The summary Report now shares `analysis_scope` with the line dataset. Its employee
+candidate endpoint delegates to `analysis.search_filters`: candidates are employees
+with authorized saved logs, independent of the selected dates, not the full company
+directory. Organization includes inactive source employees and blank departments.
+The Team viewer remains intentionally limited to active direct reports.
+
+Summary reports retain their existing grain: Log counts parents and SUM/AVG uses
+stored parent total_hours without joining child lines; Entry uses matching child
+hours. A valid parent total reconciles with its lines, but legacy inconsistent or
+zero-line parents can differ. Do not silently repair historical values to force
+reconciliation. Department remains the stored parent value. Summary currently has
+a single employee filter; the detail dialog retains employee/department multi-select.
+Compare equivalent filters, dates and review states, not differently filtered views.
+
+RPM Worklog Settings is an HTML-only Single DocType shell. Its read/search/save
+endpoints require enabled Administrator/System Manager; they do not require an
+Employee. Management role alone is insufficient. No operating-company value is
+stored in Singles: the existing site_config.json key remains authoritative and
+existing installations retain its value. Saving validates Company, checks the
+expected prior value under the standard site_config file lock, atomically replaces
+the config file preserving other keys, and clears Frappe's config cache. Failure
+must not be presented as a successful save. This is a filesystem setting, not a
+rollbackable business-document update; no broader administrator bypass is added.
+
+Analysis impact
+──────────────────────────────
+用途：公司摘要與明細共用授權，管理面板維護既有公司設定。
+Dataset：既有工作列 dataset 與原摘要 Log/Entry aggregation，未建立新工作資料。
+粒度：明細一 Line；摘要依 Report 定義為 Log 或 Entry。
+權限：公司讀取仍由 Management＋Employee＋設定公司決定；設定維護另需系統管理者。
+JOIN / 加總規則：不加入設定表或事件 JOIN；母單不乘子列數，Quantity 不混單位加總。
+使用端：摘要圖表／表格、員工候選、明細 CSV/XLSX；原生 Data Export 不變。
+驗證：test_analysis_poc 的公司摘要對帳、空部門、離職、越權、混合角色；
+test_reports_poc 的既有粒度／直屬回歸；test_worklog_settings_poc 的權限、
+無 Employee 管理者、設定保留、競爭寫入與檔案失敗。執行結果見 PROJECT_STATUS。
+不納入理由（如適用）：設定頁不成為工作明細列，不輸出 site config 其他內容或 secrets。

@@ -4,7 +4,7 @@ python /tmp/test_analysis_release.py SITE seed|before|check
 Only the two explicitly named disposable release sites are accepted.
 seed commits synthetic fixtures; before saves a fingerprint; check is read-only
 apart from rollback-only service tests. No candidate module injection is used.
-Copy test_analysis_poc.py alongside this script before running check.
+Copy test_analysis_poc.py and test_worklog_settings_poc.py alongside this script before check.
 """
 import hashlib
 import json
@@ -89,6 +89,14 @@ try:
         expected_js = '\n'.join((root / f).read_text(encoding='utf-8-sig')
                                 for f in ('analytics.js', 'analysis.js'))
         assert frappe.db.get_value('Client Script', 'RPM Work Log Analytics', 'script') == expected_js
+        from rpm_worklog import settings
+        settings_doc = frappe.get_doc('DocType', settings.DOCTYPE)
+        assert settings_doc.issingle
+        assert not any(f.fieldtype != 'HTML' for f in settings_doc.fields)
+        settings_perm = next(p for p in settings_doc.permissions if p.role == 'System Manager')
+        assert settings_perm.read and not any(settings_perm.get(a) for a in
+            ('write','create','delete','submit','cancel','amend','share','export','import'))
+        assert frappe.db.get_value('Client Script', settings.DOCTYPE, 'script') == (root / 'settings.js').read_text(encoding='utf-8-sig')
         # The original suite is guarded for the local PoC; substitute only that
         # guard after the stricter disposable-site assertion above. Import real image code.
         source = Path(__file__).with_name('test_analysis_poc.py').read_text(encoding='utf-8-sig')
@@ -96,6 +104,10 @@ try:
         assert source.count(guard) == 1
         exec(compile(source.replace(guard, 'assert frappe.local.site == ' + repr(site)),
                      'test_analysis_poc.py', 'exec'), {'__name__': '__main__'})
+        source = Path(__file__).with_name('test_worklog_settings_poc.py').read_text(encoding='utf-8-sig')
+        assert source.count(guard) == 1
+        exec(compile(source.replace(guard, 'assert frappe.local.site == ' + repr(site)),
+                     'test_worklog_settings_poc.py', 'exec'), {'__name__': '__main__'})
         assert fingerprint() == expected, 'Rollback tests changed fixtures'
         print('RELEASE_CHECK_PASS: installed apps, read-only role, exact client script, service suite, preservation')
 finally:
