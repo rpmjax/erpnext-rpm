@@ -1,6 +1,6 @@
 # PROJECT STATUS — 五分鐘接手
 
-## 2026-10-02：公司分析已驗收，準備遠端發布與 VM 交接
+## 2026-10-02：公司分析已驗收、分支已推送，待 VM 更新
 
 - 固定應用候選：`19fe20ac17d5a0d0480268e1d7eda3486f1f23ed`；分支
   `codex/worklog-management-analysis`。後續驗證腳本／文件提交不改應用 image。
@@ -8,7 +8,9 @@
   含九服務穩定性、資料／附件指紋、28 欄 CSV/XLSX、權限與 HTTP 登入驗證。
   [完整證據、限制及驗收步驟](analysis-release-validation-2026-10-01.md)。
 - 8086 仍是局部覆蓋驗收環境；分析六檔 hash、Client Script 與 PS00010 公司 scope
-  已核對一致。隔離測試 project 已停止。Hyper-V／GCP 未更新，未 merge／push。
+  已核對一致。隔離測試 project 已停止。Hyper-V／GCP 未更新，未 merge。
+- 2026-10-02 已 push 至 origin，`git ls-remote` 確認首次交接提交
+  `9e75ffb7ded319fed3df9a3d9846e41c044738d7` 可取得；本段後續僅補發布觀測紀錄。
 - 使用者於 2026-10-02 回報「驗收操作確認」；記為本批本地操作驗收通過，
   不推定已另行完成所有安全測試或正式環境驗證。
 - 發布方式：保留獨立 `codex/worklog-management-analysis` 分支，不合併其他工作分支；
