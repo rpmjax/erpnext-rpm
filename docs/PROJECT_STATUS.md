@@ -1,5 +1,19 @@
 # PROJECT STATUS — 五分鐘接手
 
+## 2026-10-02：公司分析候選可本地驗收
+
+- 固定應用候選：`19fe20ac17d5a0d0480268e1d7eda3486f1f23ed`；分支
+  `codex/worklog-management-analysis`。後續驗證腳本／文件提交不改應用 image。
+- 完整 image 新站安裝、`54b9d95` 舊站 backup → update/migrate → verify 均通過。
+  含九服務穩定性、資料／附件指紋、28 欄 CSV/XLSX、權限與 HTTP 登入驗證。
+  [完整證據、限制及驗收步驟](analysis-release-validation-2026-10-01.md)。
+- 8086 仍是局部覆蓋驗收環境；分析六檔 hash、Client Script 與 PS00010 公司 scope
+  已核對一致。隔離測試 project 已停止。Hyper-V／GCP 未更新，未 merge／push。
+- 下一步：依上方驗收步驟作最後確認；發布前核對目的 VM 的實際 image、公司設定、
+  管理 Employee／角色及备份，依唯一 [操作程序](ssh-vm-deploy.md) 更新。
+  不能直接把此候選當成 Hyper-V／GCP 已部署版本。
+- 下方各日期段落是當時 checkpoint；「未提交／待驗證」不再代表本批目前狀態。
+
 ## 2026-10-01：目前開發 checkpoint（未提交／未發布）
 
 - 目前分支：`codex/worklog-management-analysis`，基底 `54b9d95`；候選仍是工作目錄變更，
