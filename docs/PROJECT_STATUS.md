@@ -1,6 +1,6 @@
 # PROJECT STATUS — 五分鐘接手
 
-## 2026-10-02：公司分析本地操作驗收通過
+## 2026-10-02：公司分析已驗收，準備遠端發布與 VM 交接
 
 - 固定應用候選：`19fe20ac17d5a0d0480268e1d7eda3486f1f23ed`；分支
   `codex/worklog-management-analysis`。後續驗證腳本／文件提交不改應用 image。
@@ -11,7 +11,11 @@
   已核對一致。隔離測試 project 已停止。Hyper-V／GCP 未更新，未 merge／push。
 - 使用者於 2026-10-02 回報「驗收操作確認」；記為本批本地操作驗收通過，
   不推定已另行完成所有安全測試或正式環境驗證。
-- 下一步：準備發布；發布前核對目的 VM 的實際 image、公司設定、
+- 發布方式：保留獨立 `codex/worklog-management-analysis` 分支，不合併其他工作分支；
+  VM 固定使用上述應用 SHA（`TARGET_REF=19fe20ac17d5a0d0480268e1d7eda3486f1f23ed`），
+  build 產生 `rpm-worklog-vm:19fe20ac17d5`。後續文件提交不改已測應用程式碼。
+  遠端是否已可取得須用 `git fetch origin --tags` 與 `git rev-parse --verify` 確認。
+- 下一步：核對目的 VM 的實際 image、公司設定、
   管理 Employee／角色及備份，依唯一 [操作程序](ssh-vm-deploy.md) 更新。
   不能直接把此候選當成 Hyper-V／GCP 已部署版本。
 - 下方各日期段落是當時 checkpoint；「未提交／待驗證」不再代表本批目前狀態。

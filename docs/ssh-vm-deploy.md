@@ -1,6 +1,6 @@
 # VM 操作程序 — 唯一有效入口
 
-更新：2026-09-22。版本目標與環境最後觀測只看 [PROJECT_STATUS](PROJECT_STATUS.md)。日期型 vm-update 文件僅為歷史紀錄，不再依其舊版本命令更新。
+更新：2026-10-02。版本目標與環境最後觀測只看 [PROJECT_STATUS](PROJECT_STATUS.md)。日期型 vm-update 文件僅為歷史紀錄，不再依其舊版本命令更新。
 
 本程序對應 deploy/deploy.sh 現有實作，未新增 wrapper。命令在 Linux VM 執行，逐條執行、錯誤即停。GCP 暫不操作；若日後使用仍須先核對該機資源與防火牆。
 
@@ -13,14 +13,14 @@ cd ~/src/erpnext-rpm
 export RPM_STATE_DIR=/home/paskadmin/.config/rpm-worklog-vm
 ```
 
-GCP，使用 paskcoltd（僅將來需要操作時）：
+GCP，依操作者確認使用 root（僅將來需要操作時），沿用既有 state directory：
 
 ```bash
 cd /opt/erpnext-rpm
 export RPM_STATE_DIR=/home/paskcoltd/.config/rpm-worklog-gcp
 ```
 
-不要混用 root 的 HOME、不同 state directory 或另一個 Compose project。不修改主機 DB/Redis、其他網站或全域 listeners。
+不要因登入 root 就改用 root 的預設 state directory，也不要切換另一個 Compose project。不修改主機 DB/Redis、其他網站或全域 listeners。
 
 ## 2. 唯讀盤點：先辨識正在運行什麼
 
@@ -80,6 +80,32 @@ update 的實際順序：維護模式→停止入口/worker/scheduler→備份�
 注意：目前腳本在 verify 前已恢復入口及關閉維護模式，因此 verify 失敗不保證站台仍停用。失敗時須重新盤點，不能一概視為封閉安全狀態。這是已知行為，未在本批修改腳本。
 
 ## 4. 成功與驗收
+
+### 公司分析版本的額外核對
+
+先依第 1～3 節完成既有站更新，不執行 init。公司分析需要明確設定與授權，migration
+只建立角色，不會自動授予任何使用者公司全員存取。
+
+1. 在目的站核對 Company 的實際文件名稱為「均輝企業股份有限公司」。
+2. 核對預定管理者為 enabled User，且只有一筆 Active Employee 對應，Employee.company
+   與上述公司相同；不能沿用本地測試的 Employee ID，也不能假定 rpmjaxadmin 已有對應。
+3. 完成核對後，在同一 SSH session 執行以下設定（第 2 節已載入環境變數）：
+
+```bash
+docker compose --env-file "$RPM_STATE_DIR/deploy.env" -p "$RPM_PROJECT" -f deploy/compose.yaml exec -T backend bench --site "$RPM_SITE" set-config rpm_worklog_company '均輝企業股份有限公司'
+docker compose --env-file "$RPM_STATE_DIR/deploy.env" -p "$RPM_PROJECT" -f deploy/compose.yaml exec -T backend bench --site "$RPM_SITE" clear-cache
+```
+
+4. 由有權管理 User 的操作者，在目的站將 `RPM Worklog Management` 角色授予已核對的管理者。
+   不因此授予 System Manager／HR 角色；不批次套用本地角色名單。
+5. 管理者重新登入，從 Analytics 的「工作明細分析／匯出」驗證公司範圍、
+   員工／部門多選、CSV/XLSX 實際資料列與工時對帳。普通員工仍只能查本人；
+   普通主管仍依原直屬範圍。原生列表的 0-row export 問題並未在此版本修復。
+
+缺設定或 Employee 對應時，公司分析拒絕存取是預期行為，不能藉擴大原生 DocType 權限繞過。
+Company 採目前 Employee.company；離職員工歷史可納入，並非歷史公司／主管 snapshot。
+
+### 一般成功條件
 
 更新成功至少有 SERVICES_STABLE；實際 app 容器映像與目標一致，DB/backend healthy。保存 migration/verify 結果，重新執行唯讀盤點。
 
