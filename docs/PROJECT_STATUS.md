@@ -1,6 +1,23 @@
 # PROJECT STATUS — 五分鐘接手
 
 
+## 2026-10-05：目前候選已固定並完成隔離驗證
+
+- 分支 `codex/analysis-scope-settings`；應用 SHA `21ae5b5ec051da95d963fd03ef357bf190a04e6e`。
+  image `rpm-worklog-vm:21ae5b5ec051`。後续文件提交不改應用候選。
+- Analytics 摘要公司範圍一致化＋RPM Worklog Settings；使用者已確認本地設定面板操作。
+- 四組回歸、JS syntax、完整 image build、新站安裝、既有站 update/migrate、九服務穩定性、
+  嚴格資料／附件／認證指紋比對與 HTTP 登入均 PASS。
+- 首次 User 指紋差異已確認為驗證登入造成的 last_active／last_login；重新排列測試順序
+  後完整重跑通過，未放寬比對。詳細限制見 [候選驗證](scope-settings-release-validation-2026-10-02.md)。
+- 隔離測試 project 已停止、保留 volumes 與備份；8086 未在此輪改版。
+- 本候選尚未 push、merge 或更新 Hyper-V／GCP。Hyper-V 最近觀測仍為 `19fe20ac17d5`，
+  不是本批 candidate。不要從 Git HEAD 推定 VM 正在運行的版本。
+- 下一步：發布候選分支，依唯一 [VM 操作程序](ssh-vm-deploy.md) 先盤點與備份，再安排更新。
+  新版公司設定可由 Administrator／System Manager 面板操作，既有正確設定不必重設。
+- 以下為歷史 checkpoint，以本節為目前狀態入口。
+
+
 ## 2026-10-02：目前開發 — 分析入口一致化與公司設定面板
 
 - 分支 `codex/analysis-scope-settings`，基底 `1cbd5c7`；本批候選由本節所在提交固定，尚未發布；完整 SHA 由 `git log` 取得。

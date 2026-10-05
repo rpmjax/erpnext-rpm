@@ -89,7 +89,11 @@ update 的實際順序：維護模式→停止入口/worker/scheduler→備份�
 1. 在目的站核對 Company 的實際文件名稱為「均輝企業股份有限公司」。
 2. 核對預定管理者為 enabled User，且只有一筆 Active Employee 對應，Employee.company
    與上述公司相同；不能沿用本地測試的 Employee ID，也不能假定 rpmjaxadmin 已有對應。
-3. 完成核對後，在同一 SSH session 執行以下設定（第 2 節已載入環境變數）：
+3. 完成核對後，若已安裝 `21ae5b5ec051` 公司設定面板候選或其後續版本，可由
+   Administrator／System Manager 開啟 `/desk/rpm-worklog-settings/RPM%20Worklog%20Settings`，
+   核對目前公司、搜尋選取並儲存。既有正確設定不必重存；面板不會授予管理角色。
+   單有 RPM Worklog Management 角色不能修改此設定。
+   尚未安裝該面板的舊版，使用同一 SSH session 的既有命令（第 2 節已載入環境變數）：
 
 ```bash
 docker compose --env-file "$RPM_STATE_DIR/deploy.env" -p "$RPM_PROJECT" -f deploy/compose.yaml exec -T backend bench --site "$RPM_SITE" set-config rpm_worklog_company '均輝企業股份有限公司'
