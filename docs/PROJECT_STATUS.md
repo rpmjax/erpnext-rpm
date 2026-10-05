@@ -11,9 +11,12 @@
 - 首次 User 指紋差異已確認為驗證登入造成的 last_active／last_login；重新排列測試順序
   後完整重跑通過，未放寬比對。詳細限制見 [候選驗證](scope-settings-release-validation-2026-10-02.md)。
 - 隔離測試 project 已停止、保留 volumes 與備份；8086 未在此輪改版。
-- 本候選尚未 push、merge 或更新 Hyper-V／GCP。Hyper-V 最近觀測仍為 `19fe20ac17d5`，
+- 2026-10-05 已發布至 `origin/codex/analysis-scope-settings`；`git ls-remote` 確認
+  交接提交 `f98deb8549f232c4ae42614bd971351cf4f57581` 可取得，後續本段僅補發布紀錄。
+  未 merge 或更新 Hyper-V／GCP。Hyper-V 最近觀測仍為 `19fe20ac17d5`，
   不是本批 candidate。不要從 Git HEAD 推定 VM 正在運行的版本。
-- 下一步：發布候選分支，依唯一 [VM 操作程序](ssh-vm-deploy.md) 先盤點與備份，再安排更新。
+- 下一步：依唯一 [VM 操作程序](ssh-vm-deploy.md) 先盤點與備份，再安排更新。
+  固定 `TARGET_REF=21ae5b5ec051da95d963fd03ef357bf190a04e6e`；不要以後續文件提交重建另一個 app tag。
   新版公司設定可由 Administrator／System Manager 面板操作，既有正確設定不必重設。
 - 以下為歷史 checkpoint，以本節為目前狀態入口。
 

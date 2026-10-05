@@ -50,5 +50,6 @@ Administrator／System Manager 維護設定；Management 角色本身不足以�
 restart policy 設為 no，保留 volumes／備份。8086 未變更。
 `recheck-upgrade.log`、`fresh.log`、`http-final.log` 是本機驗證證據。
 未涵蓋正式 VM 更新、負載測試或完整 disaster recovery restore。
-下一步為發布候選分支及 VM 更新交接；尚未 push、merge 或更新 VM。
+2026-10-05 已 push 候選分支，遠端核對交接提交 `f98deb8549f232c4ae42614bd971351cf4f57581` 可取得。
+下一步為目的 VM 盤點／備份及更新交接；未 merge 或更新 VM。
 正式更新仍依 [唯一 VM 程序](ssh-vm-deploy.md)。不能把本地操作驗收當成正式 VM 驗證。
