@@ -1,5 +1,14 @@
 # PROJECT STATUS — 五分鐘接手
 
+## 2026-10-06：Target lifecycle 完整 image 驗證通過，待發布
+
+- 固定應用候選 `2c6b022`，image `rpm-worklog-vm:2c6b022`；文件提交不改此候選。
+- 新站安裝與既有隔離站 21ae5b5ec051 → backup → update/migrate → verify 均 PASS。
+- 九服務、HTTP 200、Apps、嚴格資料／附件／認證指紋、分析／設定及兩站 lifecycle 測試通過；legacy migration 重跑兩次通過。
+- [驗證證據與限制](target-lifecycle-release-validation-2026-10-06.md)。使用者已確認本地操作驗收；本輪未重做互動登入或 DR。
+- 下一步：發布候選分支並準備 VM 更新交接。尚未 push／merge，未更新 8086、Hyper-V／GCP。Calendar 不插隊。
+- 以下各段為先前 checkpoint；「待完整 image 驗證」已由本節取代。
+
 ## 2026-10-06：Target lifecycle 候選已固定，image build 通過
 
 - 應用候選 `2c6b022`，分支 `codex/work-target-lifecycle`；本地提交，尚未 push／merge。
