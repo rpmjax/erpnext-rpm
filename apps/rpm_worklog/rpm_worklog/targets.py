@@ -68,8 +68,13 @@ def validate(doc, method=None):
     doc.target_name = (doc.target_name or '').strip()
     if not doc.target_name:
         frappe.throw('Target name is required')
-    if doc.status not in ('Open', 'Closed', 'Archived'):
+    if doc.status not in ('Open', 'Completed', 'Closed', 'Archived'):
         frappe.throw('Invalid target status')
+    if doc.status == 'Archived':
+        if doc.is_new() or old.status != 'Archived':
+            frappe.throw('歷史封存僅供舊資料相容，請選擇追蹤中、已完成或已關閉')
+        if not doc.get('is_archived'):
+            frappe.throw('請先明確選定業務狀態，再解除歷史封存')
     if doc.start_date and doc.due_date and getdate(doc.start_date) > getdate(doc.due_date):
         frappe.throw('Due date must not precede start date')
 
@@ -80,7 +85,7 @@ def prevent_delete(doc, method=None):
         frappe.throw('只有目標建立者可以刪除未關聯的目標', frappe.PermissionError)
     references = frappe.db.sql('SELECT name FROM `tabRPM Work Log Line` WHERE work_target=%s LIMIT 1 FOR UPDATE', doc.name)
     if references:
-        frappe.throw('此目標已有工作列關聯，不能刪除；請改用 Archived（封存）。')
+        frappe.throw('此目標已有工作列關聯，不能刪除；請改用封存。')
 
 
 def validate_entries(doc, method=None):
@@ -98,8 +103,8 @@ def validate_entries(doc, method=None):
         target = frappe.get_doc(DT, row.work_target)
         if target.owner != doc.owner or target.employee != doc.employee:
             frappe.throw('Work entries may only link their owner’s targets', frappe.PermissionError)
-        if target.status != 'Open' and previous.get(row.name) != row.work_target:
-            frappe.throw('Choose an open target; closed or archived links are retained only on existing entries')
+        if (target.status != 'Open' or target.get('is_archived')) and previous.get(row.name) != row.work_target:
+            frappe.throw('只有追蹤中且未封存的目標可新增關聯；既有工作列關聯仍保留')
 
 
 @frappe.whitelist()
@@ -187,7 +192,7 @@ def install():
             dict(fieldname='target_name',label='目標名稱',fieldtype='Data',reqd=1,in_list_view=1),
             dict(fieldname='employee',label='Employee',fieldtype='Link',options='Employee',read_only=1,hidden=1,ignore_user_permissions=1),
             dict(fieldname='status',label='狀態',fieldtype='Select',options='Open\nClosed\nArchived',default='Open',reqd=1,in_list_view=1),
-            dict(fieldname='manufacturing_order_no',label='製令單號（選填）',fieldtype='Data'),
+            dict(fieldname='manufacturing_order_no',label='關聯單號（選填）',fieldtype='Data'),
             dict(fieldname='start_date',label='開始日期（選填）',fieldtype='Date'),
             dict(fieldname='due_date',label='預計完成日期（選填）',fieldtype='Date',in_list_view=1),
             dict(fieldname='description',label='說明',fieldtype='Small Text'),
@@ -199,6 +204,20 @@ def install():
                 dict(role='RPM Work Log Manager Pilot',read=1,select=1,write=0,create=0,delete=0),
             ])).insert()
     definition = frappe.get_doc('DocType', DT)
+    definition.get('fields', {'fieldname':'manufacturing_order_no'})[0].label = '關聯單號（選填）'
+    status = definition.get('fields', {'fieldname':'status'})[0]
+    status.label = '業務狀態'
+    # Archived is a legacy sentinel, never a new business outcome.
+    status.options = 'Open\nCompleted\nClosed\nArchived'
+    status.description = '追蹤中：仍在追蹤；已完成：本人申報已做完；已關閉：未必完成但停止追蹤。歷史封存不推測原結果。'
+    if not definition.get('fields', {'fieldname':'is_archived'}):
+        field = definition.append('fields',dict(fieldname='is_archived',label='已封存',
+            fieldtype='Check',default='0',in_list_view=1,
+            description='退出日常追蹤，保留業務結果與既有關聯；補登前請解除封存並重開為追蹤中。'))
+        definition.fields.remove(field)
+        definition.fields.insert(definition.fields.index(status)+1,field)
+    for index, field in enumerate(definition.fields,1):
+        field.idx=index
     for field in [dict(fieldname='work_summary_section',label='關聯工作與工時',fieldtype='Section Break'),
                   dict(fieldname='work_summary',label='關聯工作與工時',fieldtype='HTML')]:
         if not definition.get('fields', {'fieldname':field['fieldname']}):
@@ -211,6 +230,8 @@ def install():
         if perm.role == 'RPM Work Log Manager Pilot':
             perm.write = perm.create = 0
     definition.save()
+    # Update only target lifecycle metadata; no line, review, hours or quantity writes.
+    frappe.db.sql("UPDATE `tabRPM Work Target` SET is_archived=1 WHERE status='Archived' AND COALESCE(is_archived,0)!=1")
     line = frappe.get_doc('DocType', 'RPM Work Log Line')
     if not line.get('fields', {'fieldname':'work_target'}):
         line.append('fields', dict(fieldname='work_target',label='跨日工作目標（選填）',fieldtype='Link',

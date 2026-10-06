@@ -6,10 +6,35 @@
 
 ## 現行需求索引
 
+- 待辦（尚未實作）：[CAL-01 我的工作紀錄月曆 — PoC](#cal-01我的工作紀錄月曆--poc2026-10-05確認)，排在 Work Target lifecycle 完成後，不插入目前批次。
 - 已實作：UI-01 物料操作前移、UI-02 頁首送審、WF-02 批次送審、CH-01 可設定報表/圖表；下方未勾選為提出需求時的歷史狀態。驗收/部署界線以 PROJECT_STATUS 及其證據連結為準。
 - 延期：跨頁自動刷新（低優先級）；數量進度、完成率、自動結案暫不開發。
 - 待處理：跨日目標 Open/Closed/Archived 顯示翻譯。
 - 工作列結果翻譯已納入 13d5689：進行中／已完成／擱置；環境部署與畫面確認不在本頁重複维护。
+
+## CAL-01：我的工作紀錄月曆 — PoC（2026-10-05 確認）
+
+狀態：已確認 backlog，尚未實作；Work Target lifecycle 完成後進行。本次只記錄需求，不代表已開始開發或部署。
+
+- 使用 Frappe 原生 Calendar 作為 Daily Work Log 的日期瀏覽介面，不引入第三方 calendar library。
+- 一張 Daily Work Log 對應一個 event，同日允許多張；僅顯示本人已保存紀錄，點擊 event 開啟既有 Form。
+- Calendar 僅作瀏覽／導航，不作排程；禁止 drag、resize 等方式修改 `work_date`。
+- 不推導出勤、缺勤、加班或每日應填工時；不改 Hours、工作列、審核狀態或 Target 狀態。
+- Calendar 資料查詢重用既有 Self authorization；前端 filter 不作為權限控制，URL／請求參數不能擴大授權範圍。
+- 第一版不做主管／公司全員 Calendar、不做 Work Target Calendar、不做空白日期快速新增。
+- 無 schema change、無 migration；PoC 應可完整移除而不影響既有資料。
+- 驗收：本人／越權查詢、同日多張、日期與時區、點擊既有 Form、drag／resize 不寫入、查詢失敗提示及手機可用性。
+
+Analysis impact：
+
+- 用途：本人工作紀錄的日期瀏覽／導航，不新增管理分析功能。
+- Dataset：既有 Daily Work Log 的授權投影，不取代既有 Analysis Dataset。
+- 粒度：一張已保存 Daily Work Log 一列／一個 event。
+- 權限：重用 Self authorization，保留既有文件讀取限制；不得擴大資料範圍。
+- JOIN / 加總規則：不因工作子列 JOIN 複製 event；若顯示 Total Hours，使用 parent 已保存值，每張只出現一次，不改寫或重新推算工時。
+- 使用端：Calendar；本 PoC 不新增 CSV、XLSX、Report 或 Dashboard。
+- 驗證：實作時留下授權／越權、事件數與文件數、顯示工時與保存值的對帳證據；目前尚未執行 PoC 測試。
+- 不納入理由：此功能是既有資料的導航介面，不產生新業務事實，因此不另建管理分析 Dataset。
 
 ## 來源與證據
 

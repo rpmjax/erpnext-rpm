@@ -60,7 +60,7 @@ try:
     t.due_date='2090-01-01'
     denied(t.save)
     t = frappe.get_doc(targets.DT,t.name)
-    t.status='Archived'
+    t.is_archived=1
     t.save()
     linked.reload()
     linked.title='retained historical target'

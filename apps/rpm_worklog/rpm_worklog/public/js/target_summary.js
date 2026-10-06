@@ -1,5 +1,15 @@
 frappe.ui.form.on('RPM Work Target', {
     refresh(frm) {
+        const states = [
+            {value:'Open',label:'追蹤中'},
+            {value:'Completed',label:'已完成'},
+            {value:'Closed',label:'已關閉'}
+        ];
+        if (!frm.is_new() && frm.doc.status === 'Archived') {
+            states.push({value:'Archived',label:'歷史封存／原狀態未分類'});
+        }
+        frm.set_df_property('status','options',states);
+
         const wrapper = frm.fields_dict.work_summary.$wrapper;
         if (frm.is_new()) {
             wrapper.text('請先保存目標，再於工作紀錄的工作列關聯此目標。');

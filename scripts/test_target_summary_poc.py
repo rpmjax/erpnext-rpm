@@ -81,7 +81,7 @@ try:
     assert len(targets.summary(t.name,100)['rows']) == 0
     denied(lambda: targets.summary(t.name,-1))
     denied(lambda: targets.summary(t.name,'0 OR 1=1'))
-    t.status='Archived'
+    t.is_archived=1
     t.save()
     assert targets.summary(t.name)['total_hours'] == 27.25
     frappe.set_user('Administrator')

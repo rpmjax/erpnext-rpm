@@ -216,3 +216,55 @@ VM/master not updated by this increment.
 
 ### 通知導向部署補正（2026-09-21）
 實測發現 8086 的 RPM Team Viewer Client Script 仍為舊版：先前只重建容器、未跑 migrate。已補跑 migration 同步資料庫 Client Script。新增 scripts/test_team_viewer_deployment.py 檢查啟用狀態、資料庫 script 與映像 source 完全一致；此檢查須在部署後執行。先前原始碼單元測試不能取代部署檢查。瀏覽器端點擊通知仍待使用者重新驗收。
+
+
+## 2026-10-05：業務狀態與獨立封存（本地候選）
+
+分支 `codex/work-target-lifecycle`。業務值 Open／Completed／Closed，顯示追蹤中／已完成／已關閉；
+`is_archived` 是獨立 Check。完成是本人申報，不是主管驗收。狀態仍由擁有者管理，主管維持唯讀。
+未新增 workflow 或更動管理角色公司 Target 讀取範圍。三種業務狀態之間可由本人切換；
+封存不自動關閉或完成，包含 Open 也可封存，解除封存後仍需 Open 才能新增關聯。
+
+Migration representation：保留舊 `Archived` 作為 legacy sentinel；只對該值補 `is_archived=1`。
+不猜測完成／關閉，不改舊 status、不更新工作列、審核事件、Hours 或 Quantity。
+新建或原非 legacy Target 後端禁止改為 Archived。新表單只有三種正常狀態；
+legacy 表單另顯示「歷史封存／原狀態未分類」。本人選定正常狀態後才能解除 legacy 封存。
+定義更新及旗標補值可重跑；新 Completed 資料不能直接交回不識別該值的舊程式。
+
+新增關聯需 Open 且 is_archived=0，前端候選與後端一致。
+同一既有 Line 的相同 Target 關聯不受完成／關閉／封存影響，原單保存依既有審核規則：
+Draft／Returned 可編輯，Approved／Pending Review 的既有鎖定不放寬。
+複製或新增 Line 屬新關聯，不能利用既有單繞過。補登先解除封存、重開，再關聯。
+
+驗證：隔離 analysis-fresh.internal 合成資料，test_target_lifecycle_migration.py 連跑兩次
+確認 status 保留、legacy flag 正確、Work Log／Line／Review Event 全表指紋不變。
+test_target_lifecycle.py PASS：五種非可連結組合、原 Line 保存、新單／新 Line 拒絕、
+Returned 保存、Approved 鎖定、重開、legacy 非法值拒絕、主管唯讀與 admin 無業務繞過。
+既有 test_targets_poc／test_target_summary_poc 在隔離站以合成帳號取代 PoC 帳號執行 PASS；
+測試邏輯未替換，包含權限、無關聯刪除、封存歷史、分頁及審核分組。JS syntax PASS。
+
+8086 備份批次 20261005_131507，app 與備份保存於 worktree ignored
+`.local/target-lifecycle-before/`。僅套用 targets.py、兩份 Target JS、targets.install，
+安裝前後實際 Work Log／Line／Review Event 指紋一致，原 Target status 全數保留。
+瀏覽器新建表單確認只有三個業務選項＋獨立封存。未保存 UI 測試目標；使用者驗收待完成。
+不是完整 image 發布；未 commit/push/merge，未更新 Hyper-V／GCP。
+
+Analysis impact
+──────────────────────────────
+用途：保留跨日目標的本人申報結果與封存狀態。
+Dataset：現有逐工作列 dataset 不新增 Target 狀態欄位；Target 狀態分析另批。
+粒度：工作列 dataset 仍一 Line；Target 本身一目標，不將目標數當工作列數。
+權限：原 owner／有效直屬唯讀不變，公司管理 Target 入口不在本批。
+JOIN / 加總規則：不新增 JOIN，不更改 Hours／Quantity；原關聯 id 保留。
+使用端：Target 表單、工作列 Target picker、既有摘要；CSV/XLSX 28 欄契約不變。
+驗證：migration 工作事實指紋、關聯保留與新關聯拒絕、權限／摘要回歸；本批未重做匯出下載驗收。
+不納入理由（如適用）：目前狀態未加入分析／匯出，避免未確認的 current-state 分析擴張。
+
+### 2026-10-06 驗收與回歸補記
+
+使用者回報本地操作驗收確認。欄位顯示改為「關聯單號（選填）」；保留
+`manufacturing_order_no` 與既有資料，installer 同步新站／既有站名稱。
+WSL Docker 隔離站重新執行 migration、lifecycle、既有 Target 權限及摘要測試均 PASS，
+兩份 JS syntax PASS。Migration 重跑兩次，Work Log／Line／Review Event 指紋一致。
+這是指定檔案的隔離回歸；完整候選 image 安裝／更新驗證仍待執行。
+Calendar 僅列 backlog，未實作；Hyper-V／GCP 未修改。

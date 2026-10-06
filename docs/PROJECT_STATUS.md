@@ -1,6 +1,23 @@
 # PROJECT STATUS — 五分鐘接手
 
 
+## 2026-10-06：Target lifecycle 本地操作已驗收，整理候選
+
+- 分支 `codex/work-target-lifecycle`，從已發布 `cfc3ae1` 開出；本批 checkpoint 未發布，候選 SHA 由本批 Git 提交取得。
+- 三種業務狀態＋獨立 is_archived；legacy Archived 保留未分類，不猜測結果。
+- 2026-10-06：依使用者要求將「製令單號（選填）」改為「關聯單號（選填）」。新站與既有站 installer 均更新 label；本地 8086 已限定更新欄位 metadata，核對 4 筆 Target 的既有單號完全不變。保留 `manufacturing_order_no` 識別值，不改資料模型／權限。尚待使用者刷新畫面確認。
+- 本次嘗試補跑 lifecycle 測試，因腳本指定的隔離站 `analysis-fresh.internal` 不存在於 8086 container，未完成重跑；未將失敗嘗試算作 PASS。下列回歸結果仍指前次隔離驗證。
+- Migration／新生命週期／既有 Target 權限與摘要回歸通過；JS syntax 通過。
+- 已備份並套用到本地 8086，原工作事實指紋一致。新表單確認三選項＋封存。
+- 使用者於 2026-10-06 回報「已驗收，請繼續」；記錄為本地操作驗收，不推定 VM 或完整 image 已驗證。
+- 2026-10-06 已找回 WSL Docker 的隔離 `analysis-fresh.internal` 並重跑：migration 兩次及工作事實指紋、lifecycle、既有 Target 權限、摘要回歸全部 PASS；兩份 JS syntax PASS。先前 8086 缺測試站的重跑阻礙已排除。輔助 shell 最後一行 CRLF 導致呼叫失敗，已以直接命令補跑對應檢查通過。
+- 下一步：固定本批候選，進行完整 image 新站／既有站更新驗證；目前隔離回歸為指定檔案覆蓋，不代表完整 image 驗證。
+- [設計、migration、測試與 Analysis impact](work-target-phase1.md#2026-10-05業務狀態與獨立封存本地候選)。
+- 未改公司 Target 權限、Daily Work Log archive/delete、審核流程或工時規則。
+- 未更新 Hyper-V／GCP；下方 21ae5b5 是上一批已發布候選，不含本次未提交修改。
+- 後續 backlog：[CAL-01 我的工作紀錄月曆 — PoC](requirements-backlog.md#cal-01我的工作紀錄月曆--poc2026-10-05確認)。使用者已確認排在 Work Target lifecycle 完成後；目前僅記錄，未實作，不變更本批下一步。
+
+
 ## 2026-10-05：目前候選已固定並完成隔離驗證
 
 - 分支 `codex/analysis-scope-settings`；應用 SHA `21ae5b5ec051da95d963fd03ef357bf190a04e6e`。
