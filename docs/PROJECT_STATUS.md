@@ -1,5 +1,12 @@
 # PROJECT STATUS — 五分鐘接手
 
+## 2026-10-06：Target lifecycle 候選已固定，image build 通過
+
+- 應用候選 `2c6b022`，分支 `codex/work-target-lifecycle`；本地提交，尚未 push／merge。
+- 從該提交的 `git archive` 建置，WSL Docker image `rpm-worklog-vm:2c6b022` build PASS。
+- 本地操作驗收及指定檔案隔離回歸已通過；完整 image 的新站安裝／既有站 backup → update → verify 尚待執行，不以 build 成功代替部署驗證。
+- 尚未更新 Hyper-V／GCP；Calendar 維持 backlog。
+
 
 ## 2026-10-06：Target lifecycle 本地操作已驗收，整理候選
 
