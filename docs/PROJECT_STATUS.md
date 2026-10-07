@@ -1,5 +1,13 @@
 # PROJECT STATUS — 五分鐘接手
 
+## 2026-10-07：候選分支已發布，等待 `.70` 盤點與備份
+
+- 已 push `origin/codex/work-target-lifecycle`，首次交接提交 `ee71955`；應用候選仍固定 `2c6b0223347b98378fc00f562d19351f207edea1`。未 merge。
+- [唯一 VM 操作程序](ssh-vm-deploy.md#target-lifecycle-候選交接2026-10-07) 已補本批驗收順序與 rollback 限制。
+- VM 的 deploy.sh build 會產生 `rpm-worklog-vm:2c6b0223347b`；隔離已測相同應用提交的短 tag 為 `rpm-worklog-vm:2c6b022`。
+- `.70` 免互動 SSH 認證未通過；未取得新盤點／備份證據，未執行 VM 更新。需操作者在 VM 跑唯讀盤點及備份、確認離機保存後再接續。
+- 更新後先 lifecycle，再 Employee → Manager → Employee；只有 stale 仍出現才深入調查。Calendar／核心升級／其他功能不在本輪。
+
 ## 2026-10-07 接續工作順序（使用者於 2026-10-06 確認）
 
 1. 先只完成固定應用候選 `2c6b022` 的發布交接與 Hyper-V `192.168.0.70` 安全更新準備。依 [唯一 VM 操作程序](ssh-vm-deploy.md) 重新盤點實際版本、確認備份與回復方案；本段不是已發布或已更新的證據。
