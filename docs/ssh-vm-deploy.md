@@ -81,6 +81,22 @@ update 的實際順序：維護模式→停止入口/worker/scheduler→備份�
 
 ## 4. 成功與驗收
 
+### Target lifecycle 候選交接（2026-10-07）
+
+固定 `TARGET_REF=2c6b0223347b98378fc00f562d19351f207edea1`，分支
+`codex/work-target-lifecycle`；不要用後續文件提交作為應用候選。
+第 3 節 build 會產生 `rpm-worklog-vm:2c6b0223347b`。隔離驗證時相同應用提交的
+image 使用短 tag `rpm-worklog-vm:2c6b022`；不同主機重建須記錄實際 image ID，不能只比 tag。
+使用者於 2026-10-06 提供 `.70` 運行 `21ae5b5ec051`；更新前仍須重新盤點。
+
+1. 依第 1～3 節盤點、備份、離機保存、fetch 固定 SHA、build，再於維護窗口 update；既有站不得 init。
+2. 先完成服務／映像核對，再以經操作者確認可用的測試紀錄驗 lifecycle：本人完成、關閉、封存、重開；只有追蹤中且未封存可新增關聯；既有關聯於草稿／退回單仍可保存；待審／核准鎖定不放寬；主管唯讀；「關聯單號（選填）」顯示及既有單號保留。
+3. 正式站不得執行隔離專用的 seed／migration regression scripts，也不要為測試任意改動真實業務紀錄。
+4. 接著同一瀏覽器正常 logout/login 驗 Employee → Manager → Employee（PS00010、T870602，先核對實際角色）。主管入口出現／消失正確，無前一帳號資料殘留。此測試不以 hard reload 作正常操作要求；首次更新載入新資產與跨帳號 regression 分開記錄。
+5. 只有更新後 stale 仍可重現，才收集 boot／roles／Desktop／Network。Local 正常不能代替 `.70` 驗收。
+
+已存在 Completed／獨立封存資料時，不能只切回舊 image 作 rollback；需保留更新後資料並評估與備份配套還原。驗證細節見 [候選證據](target-lifecycle-release-validation-2026-10-06.md)。本批不進 Calendar、核心升級或其他功能。
+
 ### 公司分析版本的額外核對
 
 先依第 1～3 節完成既有站更新，不執行 init。公司分析需要明確設定與授權，migration

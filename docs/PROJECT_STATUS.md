@@ -1,5 +1,13 @@
 # PROJECT STATUS — 五分鐘接手
 
+## 2026-10-07 接續工作順序（使用者於 2026-10-06 確認）
+
+1. 先只完成固定應用候選 `2c6b022` 的發布交接與 Hyper-V `192.168.0.70` 安全更新準備。依 [唯一 VM 操作程序](ssh-vm-deploy.md) 重新盤點實際版本、確認備份與回復方案；本段不是已發布或已更新的證據。
+2. `.70` 更新並通過服務檢查後，先執行 Work Target lifecycle regression：本人完成／關閉／封存／重開、僅追蹤中且未封存可新增關聯、既有關聯仍能依原審核規則保存、主管唯讀。正式業務站不得直接執行只供 disposable site 的合成 seed／migration 測試。
+3. 再於同一瀏覽器執行 Employee → Manager → Employee 登出／登入 regression（已提供帳號 PS00010、T870602；實際角色先核對），確認主管入口應出現時出現、應消失時消失，且無前一帳號資料殘留。不以 hard reload 作必要操作，也不以 Local 8086 正常當作 `.70` 通過。
+4. 只有主管入口 stale 問題在更新後仍可重現，才深入調查 boot／roles／Desktop／Network；目前先暫緩該深入調查。
+5. 本輪不進 Calendar、Frappe／ERPNext 核心升級或其他功能。Calendar 仍為 backlog。
+
 ## 2026-10-06：Target lifecycle 完整 image 驗證通過，待發布
 
 - 固定應用候選 `2c6b022`，image `rpm-worklog-vm:2c6b022`；文件提交不改此候選。
