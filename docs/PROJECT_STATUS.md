@@ -1,5 +1,14 @@
 # PROJECT STATUS — 五分鐘接手
 
+## 2026-10-08：NAV-01 完整 image 驗證通過，待發布
+
+- 固定應用候選 `55f0043acf4daf0e6b0b50f38981a1c95103e759`，分支 `codex/nav-target-context`；image `rpm-worklog-vm:55f0043acf4d`。後續文件提交不改應用候選。
+- 隔離新站 init、既有合成站 `2c6b022` → backup → update/migrate 通過；兩站九服務穩定、分析／設定／lifecycle／NAV-01 測試、Client Script 同步、HTTP asset 比對皆 PASS。更新站工作事實／附件／認證指紋一致。
+- [完整證據、環境與限制](nav01-release-validation-2026-10-08.md)。本輪未重做互動登入；本地使用者操作驗收沿用下節記錄。
+- 下一步：發布候選分支並依唯一 VM 程序交接。尚未 push／merge，未修改 8086、Hyper-V 或 GCP；`.70` 仍是操作者回報的 `2c6b0223347b`，未部署 NAV-01。
+- Hyper-V 跨帳號圖示 stale 仍未解決；Calendar／核心升級不在本批。
+- 以下為歷史 checkpoint，候選與驗證現況以上節為準。
+
 ## 2026-10-08：NAV-01 本地操作驗收大體符合需求
 
 - 分支 `codex/nav-target-context`，本批建立本地候選 checkpoint，尚未發布。個人 Work Log → Target 新分頁連結明確帶個人 sidebar；Target 自動選側欄須同時有角色及有效主入口，新頁優先個人、既有有效主管脈絡保留。
