@@ -81,6 +81,29 @@ update 的實際順序：維護模式→停止入口/worker/scheduler→備份�
 
 ## 4. 成功與驗收
 
+### NAV-01 候選交接（2026-10-08）
+
+本批固定版本（取代下方歷史 lifecycle 候選作為本次更新目標）：
+
+```bash
+TARGET_REF=55f0043acf4daf0e6b0b50f38981a1c95103e759
+```
+
+發布分支 `codex/nav-target-context`，build image 為
+`rpm-worklog-vm:55f0043acf4d`。後續文件提交不是新的應用候選。
+`.70` 最近由操作者回報運行 `2c6b0223347b`；更新前仍須第 2 節重新盤點。
+隔離新站及 `2c6b022` 既有站更新已通過，詳見
+[驗證證據](nav01-release-validation-2026-10-08.md)。
+
+1. 按第 1～3 節完成盤點、當次備份及離機保存、fetch、固定 SHA、build、update/migrate、verify。不得 init 既有站；先前備份不代替本次更新前備份。
+2. 更新包含 `after_migrate` 同步資料庫 `RPM Optional Work Target` Client Script；只更換 sidebar.js 不足。核對所有 app 容器 image，記錄主機實際 image ID；不要求不同主機 build ID 與隔離環境相同。
+3. 先確認 lifecycle 無退步：僅追蹤中未封存可新增關聯，完成／關閉／封存後既有關聯仍可依原審核規則保存，主管唯讀。使用經操作者確認的測試紀錄，不在業務站執行合成 seed scripts。
+4. NAV-01：普通員工及主管兼員工從個人 Log「前往關聯目標」開新分頁，保留「我的工作紀錄」捷徑；原分頁未保存輸入不丟失。直接新開 Target 優先有效個人入口，既有有效主管脈絡保留；reload 後仍可正常導覽。URL/sidebar 參數不代表資料授權。
+5. 再跑 Employee → Manager → Employee 正常登出／登入，另記主管圖示 stale 結果。本批不宣稱修復此問題；仍出現時保留 reload 前 user/roles/Desktop/Network 證據。首次更新載入新資產所做 hard reload，不算跨帳號回歸通過。
+6. 若驗證失敗，先保留 logs／image／備份證據；依本文件 rollback 節評估。回退本批還必須恢復配套 Client Script，不能只換靜態 JS 或任意還原資料庫。
+
+下方為上一批 lifecycle 交接歷史，勿混用其 TARGET_REF。
+
 ### Target lifecycle 候選交接（2026-10-07）
 
 固定 `TARGET_REF=2c6b0223347b98378fc00f562d19351f207edea1`，分支
