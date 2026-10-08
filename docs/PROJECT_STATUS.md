@@ -1,5 +1,25 @@
 # PROJECT STATUS — 五分鐘接手
 
+## 2026-10-08：NAV-01 本地操作驗收大體符合需求
+
+- 分支 `codex/nav-target-context`，本批建立本地候選 checkpoint，尚未發布。個人 Work Log → Target 新分頁連結明確帶個人 sidebar；Target 自動選側欄須同時有角色及有效主入口，新頁優先個人、既有有效主管脈絡保留。
+- 7 個側欄選擇斷言 PASS（scripts/test_nav_target_context.cjs）、targets.js syntax PASS、8086 HTTP asset 確認新程式已提供。
+- 已備份至 ignored `.local/nav01-before`，僅本地同步兩份 JS 與 RPM Optional Work Target Client Script；未跑 migration、未修改業務資料／角色／權限。
+- 使用者於 2026-10-08 回報「驗收完畢大體上合乎需求」，記錄為本地 NAV-01 已測操作驗收符合需求；不推定所有角色／瀏覽器矩陣或 VM 驗收已完成。
+- 下一步：固定本批應用提交後做隔離完整 image 驗證，再準備發布；尚未 push／merge，不直接更新 `.70`。
+- `.70` 未更新 NAV-01；跨帳號 stale 問題不宣稱已修復。Calendar／核心升級未進入。
+- 發布前重跑：`node scripts/test_nav_target_context.cjs apps/rpm_worklog/rpm_worklog/public/js/sidebar.js`（7 assertions PASS），兩份 JS `node --check` 與 `git diff --check` PASS。
+- 更新注意：`hooks.after_migrate → setup.install → targets.install` 會將 image 內 targets.js 寫入既有 `RPM Optional Work Target` Client Script；只更新前端靜態檔不足。沿用 [唯一 VM 程序](ssh-vm-deploy.md) 的 backup/build/update/migrate/verify，不新增另一套 VM 指令。
+- 驗證界線：本批尚無完整 image 新站／既有站更新證據；先在隔離站確認 Client Script 同步、HTTP sidebar asset、NAV-01 與 lifecycle regression，再發布。VM 上跨帳號回歸仍須獨立執行。
+
+## 2026-10-08：歷史 checkpoint（NAV-01 狀態已由上節取代）
+
+- 使用者要求優先修正「前往關聯目標」新分頁誤選主管側欄、失去「我的工作紀錄」捷徑，細節見 [NAV-01 backlog](requirements-backlog.md)。尚未實作，不更動驗收中環境。
+- `.70` 操作者已回報運行 `rpm-worklog-vm:2c6b0223347b`，backend image ID `sha256:bcd2c667bde420199deb662bdf2987c542ed6b4400717d8863f5debba2de7125`；九服務 SERVICES_STABLE 通過，離機備份已確認。此為操作者回報，不是本輪直接 SSH 觀測。
+- `.70` 帳號切換 regression 未通過：PS00012 → PS00010 → PS00018 有主管圖示殘留，F5 未消失、hard reload 才移除；殘留入口曾改指向 Analytics。根因未定，與 NAV-01 分開追蹤。WebSocket Invalid origin 另記為待釐清現象，不認定為根因。
+- 使用者於 2026-10-08 回報第一項「Work Target lifecycle 操作驗收」的幾項操作目前符合要求，記為使用者回報該操作範圍驗收通過。回覆未另註執行環境，當時瀏覽器為 Local 8086；因此不額外宣稱已取得 `.70` 每一案例的獨立操作證據。
+- NAV-01 及 `.70` 跨帳號圖示殘留仍未完成，不因 lifecycle 通過而標記整批導覽問題已解決。Calendar、核心升級及其他功能維持不進入。
+
 ## 2026-10-07：候選分支已發布，等待 `.70` 盤點與備份
 
 - 已 push `origin/codex/work-target-lifecycle`，首次交接提交 `ee71955`；應用候選仍固定 `2c6b0223347b98378fc00f562d19351f207edea1`。未 merge。

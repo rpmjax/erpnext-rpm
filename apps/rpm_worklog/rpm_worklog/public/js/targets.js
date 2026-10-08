@@ -37,7 +37,8 @@ async function rpm_target_navigation(frm) {
         const links = $('<div>').appendTo(wrapper);
         for (const row of rows || []) {
             $('<a class="btn btn-default" target="_blank" rel="noopener noreferrer">')
-                .attr('href', '/desk/rpm-work-target/' + encodeURIComponent(row.name))
+                .attr('href', '/desk/rpm-work-target/' + encodeURIComponent(row.name)
+                    + '?sidebar=' + encodeURIComponent('我的工作紀錄'))
                 .css({marginRight: '8px', marginBottom: '8px', whiteSpace: 'normal'})
                 .text(`${row.target_name}（${row.name}）`).appendTo(links);
         }

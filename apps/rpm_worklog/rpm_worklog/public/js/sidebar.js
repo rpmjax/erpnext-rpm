@@ -6,6 +6,22 @@
         if (!String(entity || '').startsWith('RPM ')) return original.call(this, entity, module);
         const candidates = this.get_workspace_sidebars(entity).filter(name =>
             frappe.boot.workspace_sidebar_item[name.toLowerCase()]);
+        if (entity === 'RPM Work Target') {
+            const entrances = [
+                ['我的工作紀錄', 'RPM Work Log Pilot', 'RPM Daily Work Log'],
+                ['直屬員工工作紀錄', 'RPM Work Log Manager Pilot', 'RPM Team Work Log Viewer'],
+            ];
+            const roles = frappe.boot.user?.roles || [];
+            const eligible = entrances.filter(([name, role, link]) =>
+                candidates.includes(name) && roles.includes(role) &&
+                frappe.boot.workspace_sidebar_item[name.toLowerCase()].items.some(item =>
+                    item.link_type === 'DocType' && item.link_to === link)
+            ).map(([name]) => name);
+            this.preferred_sidebars = eligible;
+            // A fresh tab has no navigation context. Prefer the employee entrance;
+            // preserve an existing manager context only when it is still eligible.
+            return eligible.includes(this.sidebar_title) ? this.sidebar_title : eligible[0] || null;
+        }
         // Legacy English sidebars may still be valid links, but omit new features.
         const primary = entity === 'RPM Daily Work Log' ? '我的工作紀錄'
             : entity === 'RPM Team Work Log Viewer' ? '直屬員工工作紀錄' : null;
