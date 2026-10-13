@@ -81,6 +81,27 @@ update 的實際順序：維護模式→停止入口/worker/scheduler→備份�
 
 ## 4. 成功與驗收
 
+### 員工工作時間分布候選交接（2026-10-13）
+
+本次更新固定目標（下方 NAV-01／lifecycle 為歷史交接，勿混用版本）：
+
+```bash
+TARGET_REF=645d81250796a995fc54019d76bf4986f0b9cb5e
+```
+
+發布分支 `codex/employee-work-time-distribution`；第 3 節 build 產生
+`rpm-worklog-vm:645d81250796`。後續文件提交不是新的應用候選。
+新站與 `55f0043` 隔離站更新已驗證，見 [證據與限制](activity-distribution-release-validation-2026-10-13.md)。
+使用者曾回報 NAV-01 已部署，但尚無部署後 SHA/image inspect；本次先重新盤點，不能以分支 HEAD 推定 `.70` 運行版本。
+
+1. 依第 1～3 節確認實際版本、site/project、服務及資源，取得當次 backup 並離機保存，再 fetch 固定 SHA、build、update/migrate、verify。不要 init 既有站；舊備份不替代本次備份。
+2. 核對所有 app 服務的 image tag／ID，保留實際主機證據。migrate 必須同步 Analytics Client Script 與 Target Link title metadata；本批不重算歷史 Hours、不改關聯值。
+3. Analytics 預設「員工工作時間分布」：Self 自動本人；Team/Organization 未選單人不查詢。用授權帳號確認部分工號／姓名、上下鍵／Enter／Escape、清除及重新輸入選取行為。
+4. 驗日／週一至週日／月／自訂，All 與個別審核狀態；核對原始工作列 Hours、類型總和、Top 5 加剩餘工時與筆數。未分類保留工時；空期間不冒充零工時結果。扇形點擊及鍵盤展開對應明細。
+5. 三種既有報表仍正常；Target 名稱顯示於工作列，保存／重載後關聯仍正確。Lifecycle、既有關聯可保存及主管唯讀規則不變。只用操作者確認可用的測試紀錄，禁止正式站執行合成 seed scripts。
+6. 跨帳號圖示 stale 仍為已知問題，本批未修復，Desk 提示亦未包含；不要將工時分布驗收當作 stale 通過。Calendar／核心升級未包含。
+7. 發生錯誤先保留 logs、image 與備份證據，再依本程序 rollback 段評估；只切回舊 image 不會自動還原 DB Client Script／metadata，勿臨時改寫業務資料。
+
 ### NAV-01 候選交接（2026-10-08）
 
 本批固定版本（取代下方歷史 lifecycle 候選作為本次更新目標）：
