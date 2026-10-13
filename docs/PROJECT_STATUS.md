@@ -1,5 +1,38 @@
 # PROJECT STATUS — 五分鐘接手
 
+## 2026-10-13：主管帳號本地工時分布驗收通過（使用者回報）
+
+- 使用者已於本地 sandbox 使用主管帳號操作驗收，回報尚未發現特殊狀況。涵蓋此次工時分布與互動修正的已操作範圍；不推定 Employee／Organization 全矩陣或 VM 驗收通過。
+- 下一步：整理本批 diff 與候選 checkpoint，再進行隔離完整 image／既有站更新驗證，之後才準備發布與 VM 交接。尚未 commit/push、未更新 VM。
+- Target 名稱顯示的本地驗收另見下方紀錄；帳號切換 stale 仍是已知問題。
+
+## 2026-10-13：工時分布互動修正已套用本地
+
+- 單欄員工 autocomplete 與圓餅點擊／鍵盤展開明細已完成，本地備份後同步；Node 測試與本地瀏覽器部分工號／鍵盤選取／扇形展開檢查通過。詳見功能規劃文件的互動修正紀錄。
+- 尚待使用者操作驗收；不更動統計或權限，未更新 VM、未 commit/push。
+
+## 2026-10-13：Target 名稱本地驗收；工時分布已限定套用 8086
+
+- 使用者確認本地 sandbox 操作驗收；依上一輪套用範圍記為 Target 名稱顯示已驗收，不擴大為工時分布驗收。
+- 接續工時分布：備份 backend 的三份既有檔案與 Analytics Client Script，位置 sites/frontend/private/backups/distribution-20261013（新 activity_distribution.py 原不存在）。同步四份候選檔案及 Analytics Client Script，清快取並重啟本地 backend；未執行完整 installer/migration。
+- Target／Log／Line 全表指紋前後一致；JS preset/render tests、登入頁 HTTP 200、有效 Self 帳號唯讀 options/query 與筆數核對 PASS。未修改角色或既有報表設定。
+- 新報表可在本地 8086 依 [browser checklist](employee-work-time-distribution-plan.md#browser-acceptance-checklist尚待執行) 驗收；本輪未執行互動 browser acceptance。未 commit/push、未更新 Hyper-V/GCP。
+
+## 2026-10-13：工作列 Target 顯示名稱（已限定套用本地，待驗收）
+
+- 使用者要求選定的跨日目標顯示名稱而非 RWT 編號。targets.install 對新舊 DocType 統一設定 title_field=target_name、show_title_field_in_link=1，沿用 Frappe 原生 Link title 顯示。
+- 只改呈現 metadata；work_target 仍存原 Target name，不更動關聯、Hours、Quantity、lifecycle 或授權。Analysis impact：既有 Dataset 識別值及匯出不變，不增加分析欄位。
+- 與進行中的工時分布功能分開記錄；尚未套用 8086 或 VM、未做 browser acceptance。後續需驗證選取後、保存／重載後、同名不同 ID 及既有完成／封存目標的顯示與連結。
+- 後續使用者授權本地套用：已確認 frontend 綁定 127.0.0.1:8086、backend site=frontend 且 model_poc 開啟，僅使用 DocType.save 更新上述兩項 metadata 並清快取，未跑完整 installer。Target／Log／Line 全表指紋前後一致；備份位於 backend 的 sites/frontend/private/backups/target-title-20261013T011910.json。
+- 本地可進行上述 browser acceptance；未更新 Hyper-V／GCP，未同步進行中的工時分布功能。
+
+## 2026-10-12：員工工作時間分布已實作，未部署
+
+- 分支 `codex/employee-work-time-distribution`，基底 `f1dda96`。週一至週日、未分類保留工時、Self 本人／Team與Organization單人必選已正式採用。
+- 新單人工時分布、Top 5、日期 preset、長條／圓餅及明細已實作；新服務與既有 analysis/reports 隔離回歸通過。詳見 [實作、測試、風險與 browser acceptance](employee-work-time-distribution-plan.md#正式決策與實作結果)。
+- 尚未同步 8086、未部署 VM、未跑實際 browser acceptance／完整 image 驗證，不能將目前瀏覽器頁面當成新版本。未 commit／push 本批。
+- 下一步：review diff，依 checklist 安排瀏覽器驗收；Desk 提示、Calendar、核心升級未插入本批。
+
 ## 2026-10-12：員工工作時間分布規劃已保存
 
 - [Audit、資料契約、最小方案與驗收條件](employee-work-time-distribution-plan.md) 是本功能規劃入口。單一員工 × 期間 × Activity Type，保留既有三報表；尚未實作或部署。

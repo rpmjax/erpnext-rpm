@@ -204,6 +204,9 @@ def install():
                 dict(role='RPM Work Log Manager Pilot',read=1,select=1,write=0,create=0,delete=0),
             ])).insert()
     definition = frappe.get_doc('DocType', DT)
+    # Link controls display the title while retaining the stable Target name as value.
+    definition.title_field = 'target_name'
+    definition.show_title_field_in_link = 1
     definition.get('fields', {'fieldname':'manufacturing_order_no'})[0].label = '關聯單號（選填）'
     status = definition.get('fields', {'fieldname':'status'})[0]
     status.label = '業務狀態'

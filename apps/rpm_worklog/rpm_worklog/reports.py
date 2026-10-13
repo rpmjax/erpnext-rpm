@@ -58,8 +58,10 @@ def validate_config(doc, method=None):
 def options():
     available = analysis_options()
     allowed = available["scopes"]
-    return dict(scopes=allowed, company=available["company"], fields=catalog(), reports=frappe.get_all(CONFIG,
-        filters={'enabled': 1}, fields=['name', 'report_title', 'default_state'], order_by='report_title', limit_page_length=0))
+    from rpm_worklog.activity_distribution import REPORT
+    return dict(scopes=allowed, company=available["company"], fields=catalog(), reports=[
+        dict(name=REPORT, report_title='員工工作時間分布', default_state='All'), *frappe.get_all(CONFIG,
+        filters={'enabled': 1}, fields=['name', 'report_title', 'default_state'], order_by='report_title', limit_page_length=0)])
 
 
 @frappe.whitelist()

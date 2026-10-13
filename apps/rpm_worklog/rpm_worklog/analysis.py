@@ -107,13 +107,11 @@ def query(scope='Self', filters=None, offset=0, page_size=100):
     return dataset(scope, filters, offset, page_size)
 
 
-def dataset(scope, filters, offset=0, page_size=100, complete=False):
-    """Shared dataset for screen and synchronous complete export (one request)."""
+def source_query(scope, filters):
+    """One authorized line source for details, exports and aggregate projections."""
     where, params = analysis_scope(scope)
     filters = _filters(filters)
-    offset = _integer(offset, 0, 2147483647)
-    page_size = _integer(page_size, 1, 1000)
-    params.update(start=filters['from_date'], end=filters['to_date'], offset=offset, limit=page_size)
+    params.update(start=filters['from_date'], end=filters['to_date'])
     where.append('p.work_date BETWEEN %(start)s AND %(end)s')
     for key, expression in FILTER_FIELDS.items():
         if key in filters:
@@ -125,6 +123,15 @@ def dataset(scope, filters, offset=0, page_size=100, complete=False):
         INNER JOIN `tabRPM Work Log Line` c ON c.parent=p.name
           AND c.parenttype='RPM Daily Work Log' AND c.parentfield='lines'
         WHERE ''' + ' AND '.join(where)
+    return source, params, filters
+
+
+def dataset(scope, filters, offset=0, page_size=100, complete=False):
+    """Shared dataset for screen and synchronous complete export (one request)."""
+    source, params, filters = source_query(scope, filters)
+    offset = _integer(offset, 0, 2147483647)
+    page_size = _integer(page_size, 1, 1000)
+    params.update(offset=offset, limit=page_size)
     totals = frappe.db.sql('''SELECT COUNT(*) AS total_rows,
         COUNT(DISTINCT p.name) AS total_logs, COALESCE(SUM(c.hours),0) AS reported_hours '''
         + source, params, as_dict=True)[0]
