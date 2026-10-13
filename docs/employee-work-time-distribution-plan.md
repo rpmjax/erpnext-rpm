@@ -4,6 +4,8 @@
 
 ## 正式決策與實作結果
 
+2026-10-13 發布前 checkpoint：應用候選已固定 `645d81250796a995fc54019d76bf4986f0b9cb5e`，隔離完整 image 新站／既有站更新驗證通過，詳見 [release validation](activity-distribution-release-validation-2026-10-13.md)。尚未 push/merge 或部署 VM。下方「未建置完整 image」等為先前階段的驗證界線。
+
 2026-10-13 使用者驗收：已於本地 sandbox 使用主管帳號操作並驗收，尚未發現特殊狀況。記錄為主管帳號已操作範圍通過，不代替其他角色、所有瀏覽器／觸控、完整 image 或 VM 驗證。
 
 2026-10-13 互動修正：使用者同意將兩段式員工搜尋改為單欄 combobox（部分文字、滑鼠、上下鍵、Enter、Escape），重新輸入即清除舊選取並使舊結果失效。圓餅扇形可 click／Enter／Space 展開相應 details，選取描邊與 focus-visible 虛線保留鍵盤辨識。只修改前端與測試，授權／aggregation 不變。

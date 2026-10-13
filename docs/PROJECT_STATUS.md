@@ -1,5 +1,13 @@
 # PROJECT STATUS — 五分鐘接手
 
+## 2026-10-13：工時分布候選已固定，隔離完整 image 驗證通過
+
+- 分支 `codex/employee-work-time-distribution`；固定應用候選 `645d81250796a995fc54019d76bf4986f0b9cb5e`，image `rpm-worklog-vm:645d81250796`。包含工時分布、已驗收互動及 Target 名稱顯示；文件提交不改候選。
+- 全新站安裝及 `55f0043` 既有隔離站 backup/update/migrate 通過；兩站九服務穩定、HTTP 200、資料／附件／認證指紋、分析／設定／工時分布／lifecycle／Client Script／名稱 metadata 檢查通過。更新站舊報表回歸通過。
+- [完整證據及限制](activity-distribution-release-validation-2026-10-13.md)。本輪未改 8086、Hyper-V 或 GCP；不等於正式站已更新。
+- 下一步：發布候選分支與 VM 交接；目前尚未 push/merge。本地主管驗收沿用下方使用者紀錄，未推定全部角色與 browser matrix 完成。
+- 以下為歷史 checkpoint，提交及驗證狀態以上節為準。
+
 ## 2026-10-13：主管帳號本地工時分布驗收通過（使用者回報）
 
 - 使用者已於本地 sandbox 使用主管帳號操作驗收，回報尚未發現特殊狀況。涵蓋此次工時分布與互動修正的已操作範圍；不推定 Employee／Organization 全矩陣或 VM 驗收通過。
