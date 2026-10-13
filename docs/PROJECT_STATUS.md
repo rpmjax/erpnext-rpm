@@ -1,11 +1,12 @@
 # PROJECT STATUS — 五分鐘接手
 
-## 2026-10-13：工時分布候選已固定，隔離完整 image 驗證通過
+## 2026-10-13：工時分布候選已發布，待 VM 盤點與當次備份
 
 - 分支 `codex/employee-work-time-distribution`；固定應用候選 `645d81250796a995fc54019d76bf4986f0b9cb5e`，image `rpm-worklog-vm:645d81250796`。包含工時分布、已驗收互動及 Target 名稱顯示；文件提交不改候選。
 - 全新站安裝及 `55f0043` 既有隔離站 backup/update/migrate 通過；兩站九服務穩定、HTTP 200、資料／附件／認證指紋、分析／設定／工時分布／lifecycle／Client Script／名稱 metadata 檢查通過。更新站舊報表回歸通過。
 - [完整證據及限制](activity-distribution-release-validation-2026-10-13.md)。本輪未改 8086、Hyper-V 或 GCP；不等於正式站已更新。
-- 下一步：發布候選分支與 VM 交接；目前尚未 push/merge。本地主管驗收沿用下方使用者紀錄，未推定全部角色與 browser matrix 完成。
+- 已 push `origin/codex/employee-work-time-distribution`，git ls-remote 確認交接提交 `3459b210df63c166380101fa5074c5074db9ac06` 可取得；後續文件提交不改固定應用候選。
+- 下一步：依 [唯一 VM 程序](ssh-vm-deploy.md#員工工作時間分布候選交接2026-10-13) 重新盤點、當次備份及離機保存，再安排更新。尚未 merge 或更新 VM。本地主管驗收沿用下方使用者紀錄，未推定全部角色與 browser matrix 完成。
 - 以下為歷史 checkpoint，提交及驗證狀態以上節為準。
 
 ## 2026-10-13：主管帳號本地工時分布驗收通過（使用者回報）
